@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { OtpType } from '../../generated/prisma/enums.js';
+import { OtpType } from '@prisma/client';
 import { AuthService } from './auth.service.js';
 import { Public } from './decorators/public.decorator.js';
 import { LoginDto } from './dto/login.dto.js';

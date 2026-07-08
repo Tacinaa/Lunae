@@ -1,4 +1,4 @@
-import { Phase } from '../../generated/prisma/enums.js';
+import { Phase } from '@prisma/client';
 import { CycleAlgorithmService } from './cycle-algorithm.service.js';
 
 describe('CycleAlgorithmService', () => {

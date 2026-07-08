@@ -1,5 +1,5 @@
 import { IsEmail, IsEnum, IsString, Length } from 'class-validator';
-import { OtpType } from '../../../generated/prisma/enums.js';
+import { OtpType } from '@prisma/client';
 
 export class VerifyOtpDto {
   @IsEmail()

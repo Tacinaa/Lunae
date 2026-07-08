@@ -16,7 +16,7 @@
 ### Base de données (Prisma)
 - [x] `npx prisma init`
 - [x] Écrire le schéma Prisma complet (`schema.prisma`) avec les entités : `User`, `CycleEntry`, `CyclePhase`, `Calendar`, `Event`, `MoveSuggestion`, `Invitation`, `RefreshToken`, `OtpCode`
-- [ ] `npx prisma migrate dev --name init`
+- [x] `npx prisma migrate dev --name init`
 - [x] Créer `PrismaService` injectable
 
 ### Module Auth

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Phase } from '../../generated/prisma/enums.js';
+import { Phase } from '@prisma/client';
 
 export interface PhaseEntry {
   date: string;
