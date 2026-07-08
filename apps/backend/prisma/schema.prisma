@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -10,4 +5,173 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Phase {
+  menstruation
+  follicular
+  ovulation
+  luteal
+}
+
+enum CalendarSource {
+  local
+  google
+  apple
+  microsoft
+}
+
+enum EventType {
+  meeting
+  class
+  sport
+  personal
+  other
+}
+
+enum SuggestionStatus {
+  pending
+  accepted
+  dismissed
+}
+
+enum InvitationStatus {
+  pending
+  accepted
+  declined
+  maybe
+}
+
+enum OtpType {
+  email_verification
+  login
+  two_fa
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String?
+  firstName    String?
+  lastName     String?
+  phoneNumber  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  cycleEntries  CycleEntry[]
+  cyclePhases   CyclePhase[]
+  calendars     Calendar[]
+  events        Event[]
+  suggestions   MoveSuggestion[]
+  invitations   Invitation[]
+  refreshTokens RefreshToken[]
+  otpCodes      OtpCode[]
+}
+
+model CycleEntry {
+  id             String   @id @default(uuid())
+  userId         String
+  startDate      DateTime @db.Date
+  cycleLength    Int      @default(28)
+  periodDuration Int      @default(5)
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CyclePhase {
+  id       String   @id @default(uuid())
+  userId   String
+  date     DateTime @db.Date
+  phase    Phase
+  cycleDay Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model Calendar {
+  id         String         @id @default(uuid())
+  userId     String
+  name       String
+  color      String         @default("#6B3FA0")
+  source     CalendarSource @default(local)
+  externalId String?
+  syncToken  String?
+  createdAt  DateTime       @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events Event[]
+}
+
+model Event {
+  id         String    @id @default(uuid())
+  calendarId String
+  userId     String
+  title      String
+  startAt    DateTime
+  endAt      DateTime
+  location   String?
+  notes      String?
+  isAllDay   Boolean   @default(false)
+  isMovable  Boolean   @default(true)
+  externalId String?
+  eventType  EventType @default(other)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  calendar    Calendar         @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  suggestions MoveSuggestion[]
+  invitations Invitation[]
+}
+
+model MoveSuggestion {
+  id             String           @id @default(uuid())
+  eventId        String
+  userId         String
+  suggestedStart DateTime
+  suggestedEnd   DateTime
+  targetPhase    Phase
+  score          Int
+  status         SuggestionStatus @default(pending)
+  createdAt      DateTime         @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Invitation {
+  id        String           @id @default(uuid())
+  eventId   String
+  userId    String
+  status    InvitationStatus @default(pending)
+  createdAt DateTime         @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model OtpCode {
+  id        String   @id @default(uuid())
+  userId    String
+  code      String
+  type      OtpType
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
