@@ -19,7 +19,9 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   user: AuthUser | null;
+  hasCompletedOnboarding: boolean;
   setTokens: (tokens: AuthTokens) => void;
+  completeOnboarding: () => void;
   logout: () => void;
 }
 
@@ -29,9 +31,17 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       user: null,
+      hasCompletedOnboarding: false,
       setTokens: ({ accessToken, refreshToken, user }) =>
         set({ accessToken, refreshToken, user }),
-      logout: () => set({ accessToken: null, refreshToken: null, user: null }),
+      completeOnboarding: () => set({ hasCompletedOnboarding: true }),
+      logout: () =>
+        set({
+          accessToken: null,
+          refreshToken: null,
+          user: null,
+          hasCompletedOnboarding: false,
+        }),
     }),
     {
       name: 'lunae-auth',

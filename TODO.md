@@ -88,38 +88,39 @@
 - [x] Configurer Jest (preset `jest-expo`) + script `test` dans `package.json`
 
 ### Navigation
-- [ ] Créer `RootNavigator` : stack `Auth` (non connecté) + stack `App` (connecté)
-- [ ] Stack Auth : `Onboarding` → `Welcome` → `Login` / `Register` → `OtpVerification` → `CycleSetup` → `CalendarPermission` → `CalendarImport` → `Ready`
-- [ ] Stack App : `MainCalendar` (écran principal)
+- [x] Créer `RootNavigator` : bascule à 3 niveaux selon l'état d'auth — `AuthNavigator` (non connecté) → `OnboardingSetupNavigator` (connecté mais setup pas terminé) → `AppNavigator` (connecté + setup terminé). Un flag persisté `hasCompletedOnboarding` (AuthStore) pilote la 2ᵉ transition, pour ne pas sauter la saisie du cycle après une inscription.
+- [x] `AuthNavigator` : `Onboarding` → `Welcome` → `Login` / `Register` → `OtpVerification`
+- [x] `OnboardingSetupNavigator` : `CycleSetup` → `CalendarPermission` → `CalendarImport` → `Ready`
+- [x] `AppNavigator` : `MainCalendar` (écran principal)
 
 ### Écran 01 — Onboarding (3 slides)
-- [ ] Composant `OnboardingScreen` avec `FlatList` horizontal ou `PagerView`
-- [ ] 3 slides avec illustration, titre, texte, bouton CTA
-- [ ] Indicateur de progression (3 points)
-- [ ] Bouton "Suivant" / "C'est parti !" sur le dernier slide → navigue vers `Welcome`
-- [ ] Persister en AsyncStorage que l'onboarding a été vu (pour ne pas le reshow)
+- [x] Composant `OnboardingScreen` avec `ScrollView` horizontal (`FlatList`/`PagerView` écartés : `pagingEnabled`/`scrollToIndex` peu fiables sur `react-native-web`)
+- [x] 3 slides avec émoji, titre, texte, bouton CTA
+- [x] Indicateur de progression (3 points), mis à jour uniquement via `onScroll` (évite un aller-retour visuel entre bouton et glissé)
+- [x] Bouton "Suivant" / "C'est parti !" sur le dernier slide → navigue vers `Welcome`
+- [x] Persister en AsyncStorage que l'onboarding a été vu (pour ne pas le reshow)
 
 ### Écran 02 — Welcome / Auth
-- [ ] Logo Lunae (lune + étoiles + "28")
-- [ ] Bouton "Continuer avec Apple" (placeholder pour le MVP)
-- [ ] Bouton "Continuer avec Google" (placeholder pour le MVP)
-- [ ] Champ email + bouton "Continuer avec un email"
-- [ ] Appel `GET /auth/check-email` ou logique : si email existe → Login, sinon → Register
+- [x] Logo Lunae (placeholder texte/émoji, pas d'asset graphique)
+- [x] Bouton "Continuer avec Apple" (placeholder pour le MVP)
+- [x] Bouton "Continuer avec Google" (placeholder pour le MVP)
+- [x] Champ email + bouton "Continuer avec un email" → `Register` (email pré-rempli)
+- [x] ~~Appel `GET /auth/check-email`~~ — endpoint inexistant côté backend ; remplacé par un lien "Vous avez déjà un compte ? Se connecter" → `Login` (décision validée avec l'utilisateur)
 
-### Écran 03 — Connexion (email existant)
-- [ ] Champ email pré-rempli (désactivé)
-- [ ] Champ mot de passe
-- [ ] Bouton "Continuer" → `POST /auth/login` → navigue vers OTP
+### Écran 03 — Connexion
+- [x] Champ email éditable (pré-rempli si dispo depuis Welcome) — **pas désactivé** : le champ verrouillé bloquait la saisie quand on arrivait sur Login sans email pré-rempli (bug constaté en test)
+- [x] Champ mot de passe
+- [x] Bouton "Continuer" → `POST /auth/login` → navigue vers OTP
 
 ### Écran 04 — Inscription
-- [ ] Champs : prénom, nom, email, mot de passe
-- [ ] Bouton "Continuer" → `POST /auth/register` → navigue vers OTP
+- [x] Champs : prénom, nom, email, mot de passe
+- [x] Bouton "Continuer" → `POST /auth/register` → navigue vers OTP
 
-### Écran 04 — Vérification OTP
-- [ ] 6 cases de saisie individuelles (auto-focus suivant)
-- [ ] Bouton "Suivant" → `POST /auth/verify-otp`
-- [ ] Lien "Renvoyer le code" → `POST /auth/request-otp`
-- [ ] Afficher l'email masqué dans le texte
+### Écran — Vérification OTP
+- [x] 6 cases de saisie individuelles (auto-focus suivant/arrière), soumission automatique dès les 6 chiffres saisis
+- [x] `POST /auth/verify-otp` → `setTokens()`
+- [x] Lien "Renvoyer le code" → `POST /auth/request-otp`
+- [x] Afficher l'email masqué dans le texte
 
 ### Écran 07 — Saisie du cycle
 - [ ] Date picker : "Date de début de vos dernières règles"
@@ -138,7 +139,7 @@
 - [ ] Bouton "Suivant" → navigue vers `Ready`
 
 ### Écran 10 — Confirmation finale
-- [ ] Logo + "Tout est prêt !" + bouton "Commencer" → navigue vers `MainCalendar`
+- [x] Logo + "Tout est prêt !" + bouton "Commencer" → `completeOnboarding()` débloque `AppNavigator`/`MainCalendar`
 
 ### Tests unitaires (frontend)
 - [x] `AuthStore` — `setTokens()` met à jour `accessToken`/`user` ; `logout()` réinitialise l'état
