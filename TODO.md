@@ -9,56 +9,56 @@
 ### Setup backend
 - [x] `cd apps/backend && npx @nestjs/cli new . --package-manager npm`
 - [x] Installer les dépendances : `@nestjs/config`, `@nestjs/jwt`, `@nestjs/passport`, `passport-jwt`, `bcrypt`, `class-validator`, `class-transformer`, `prisma`, `@prisma/client`, `nodemailer`
-- [ ] Configurer `.env` : `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `SMTP_*`
-- [ ] Activer `ValidationPipe` globale dans `main.ts`
-- [ ] Configurer `ConfigModule` global
+- [x] Configurer `.env` : `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `SMTP_*`
+- [x] Activer `ValidationPipe` globale dans `main.ts`
+- [x] Configurer `ConfigModule` global
 
 ### Base de données (Prisma)
 - [x] `npx prisma init`
-- [ ] Écrire le schéma Prisma complet (`schema.prisma`) avec les entités : `User`, `CycleEntry`, `CyclePhase`, `Calendar`, `Event`, `MoveSuggestion`, `Invitation`, `RefreshToken`, `OtpCode`
+- [x] Écrire le schéma Prisma complet (`schema.prisma`) avec les entités : `User`, `CycleEntry`, `CyclePhase`, `Calendar`, `Event`, `MoveSuggestion`, `Invitation`, `RefreshToken`, `OtpCode`
 - [ ] `npx prisma migrate dev --name init`
-- [ ] Créer `PrismaService` injectable
+- [x] Créer `PrismaService` injectable
 
 ### Module Auth
-- [ ] Générer `AuthModule`, `AuthService`, `AuthController`
-- [ ] `POST /auth/register` — créer un utilisateur + hasher le password (bcrypt 12) + générer OTP + envoyer email
-- [ ] `POST /auth/verify-otp` — vérifier code 6 chiffres (haché, expiration 10 min, usage unique) → émettre access + refresh tokens
-- [ ] `POST /auth/login` — vérifier email/password → générer OTP si MFA, sinon émettre tokens
-- [ ] `POST /auth/refresh` — valider refresh token → émettre nouveau access token
-- [ ] `POST /auth/logout` — révoquer refresh token en BDD
-- [ ] `POST /auth/request-otp` — renvoi d'un OTP
-- [ ] Implémenter `JwtAuthGuard` (passport-jwt) appliqué globalement sauf `AuthModule`
-- [ ] Rate limiting sur les endpoints auth (throttler NestJS : 5 req / 15 min)
-- [ ] **Tests unitaires Auth** :
-  - [ ] `hashPassword()` retourne un hash différent du mdp en clair
-  - [ ] `validatePassword()` — bon mdp → true, mauvais mdp → false
-  - [ ] `generateOtp()` → chaîne de 6 chiffres
-  - [ ] `isOtpExpired()` — OTP de 15 min → true, OTP de 5 min → false
+- [x] Générer `AuthModule`, `AuthService`, `AuthController`
+- [x] `POST /auth/register` — créer un utilisateur + hasher le password (bcrypt 12) + générer OTP + envoyer email
+- [x] `POST /auth/verify-otp` — vérifier code 6 chiffres (haché, expiration 10 min, usage unique) → émettre access + refresh tokens
+- [x] `POST /auth/login` — vérifier email/password → générer OTP si MFA, sinon émettre tokens
+- [x] `POST /auth/refresh` — valider refresh token → émettre nouveau access token
+- [x] `POST /auth/logout` — révoquer refresh token en BDD
+- [x] `POST /auth/request-otp` — renvoi d'un OTP
+- [x] Implémenter `JwtAuthGuard` (passport-jwt) appliqué globalement sauf `AuthModule`
+- [x] Rate limiting sur les endpoints auth (throttler NestJS : 5 req / 15 min)
+- [x] **Tests unitaires Auth** :
+  - [x] `hashPassword()` retourne un hash différent du mdp en clair
+  - [x] `validatePassword()` — bon mdp → true, mauvais mdp → false
+  - [x] `generateOtp()` → chaîne de 6 chiffres
+  - [x] `isOtpExpired()` — OTP de 15 min → true, OTP de 5 min → false
 
 ### Module User
-- [ ] Générer `UserModule`, `UserService`, `UserController`
-- [ ] `GET /users/me` — retourner le profil courant (sans passwordHash)
-- [ ] `PATCH /users/me` — mettre à jour firstName, lastName, phoneNumber
+- [x] Générer `UserModule`, `UserService`, `UserController`
+- [x] `GET /users/me` — retourner le profil courant (sans passwordHash)
+- [x] `PATCH /users/me` — mettre à jour firstName, lastName, phoneNumber
 
 ### Module Cycle
-- [ ] Générer `CycleModule`, `CycleService`, `CycleController`
-- [ ] `POST /cycle` — enregistrer un nouveau `CycleEntry` + recalculer les `CyclePhase`
-- [ ] `GET /cycle` — historique des cycles de l'utilisatrice
-- [ ] `GET /cycle/current-phase` — phase en cours + numéro de jour du cycle
-- [ ] `GET /cycle/phases?from=&to=` — phases prédites sur une période (pour alimenter le calendrier)
-- [ ] `GET /cycle/prediction` — date prédite du prochain cycle (moyenne des N derniers cycles)
-- [ ] Implémenter `CycleAlgorithmService` (logique pure, sans BDD) :
-  - [ ] `calculatePhases(startDate, cycleLength, periodDuration)` → tableau `{ date, phase }`
-  - [ ] `predictNextPeriod(cycleHistory)` → date (moyenne des durées)
-  - [ ] `getPhaseForDate(date, cycleEntries)` → phase ou null
-- [ ] **Tests unitaires Cycle** :
-  - [ ] `calculatePhases()` — cycle 28j, règles 5j → 4 phases correctes (5 + 8 + 3 + 12 jours)
-  - [ ] `calculatePhases()` — cycle court 21j → phases ajustées
-  - [ ] `calculatePhases()` — cycle long 35j → phases ajustées
-  - [ ] `predictNextPeriod()` — 1 cycle → utilise la valeur saisie
-  - [ ] `predictNextPeriod()` — 3 cycles → utilise la moyenne
-  - [ ] `getPhaseForDate()` — date en menstruation → `'menstruation'`
-  - [ ] `getPhaseForDate()` — date hors cycle → `null`
+- [x] Générer `CycleModule`, `CycleService`, `CycleController`
+- [x] `POST /cycle` — enregistrer un nouveau `CycleEntry` + recalculer les `CyclePhase`
+- [x] `GET /cycle` — historique des cycles de l'utilisatrice
+- [x] `GET /cycle/current-phase` — phase en cours + numéro de jour du cycle
+- [x] `GET /cycle/phases?from=&to=` — phases prédites sur une période (pour alimenter le calendrier)
+- [x] `GET /cycle/prediction` — date prédite du prochain cycle (moyenne des N derniers cycles)
+- [x] Implémenter `CycleAlgorithmService` (logique pure, sans BDD) :
+  - [x] `calculatePhases(startDate, cycleLength, periodDuration)` → tableau `{ date, phase }`
+  - [x] `predictNextPeriod(cycleHistory)` → date (moyenne des durées)
+  - [x] `getPhaseForDate(date, cycleEntries)` → phase ou null
+- [x] **Tests unitaires Cycle** :
+  - [x] `calculatePhases()` — cycle 28j, règles 5j → 4 phases correctes (5 + 8 + 3 + 12 jours)
+  - [x] `calculatePhases()` — cycle court 21j → phases ajustées
+  - [x] `calculatePhases()` — cycle long 35j → phases ajustées
+  - [x] `predictNextPeriod()` — 1 cycle → utilise la valeur saisie
+  - [x] `predictNextPeriod()` — 3 cycles → utilise la moyenne
+  - [x] `getPhaseForDate()` — date en menstruation → `'menstruation'`
+  - [x] `getPhaseForDate()` — date hors cycle → `null`
 
 ---
 
