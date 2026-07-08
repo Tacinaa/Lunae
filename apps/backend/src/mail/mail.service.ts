@@ -20,7 +20,10 @@ export class MailService {
   }
 
   async sendOtp(to: string, code: string): Promise<void> {
-    const from = this.config.get<string>('SMTP_FROM', 'Lunae <noreply@lunae.app>');
+    const from = this.config.get<string>(
+      'SMTP_FROM',
+      'Lunae <noreply@lunae.app>',
+    );
     try {
       await this.transporter.sendMail({
         from,

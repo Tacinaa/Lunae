@@ -1,5 +1,8 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
-import { CurrentUser, type JwtUser } from '../auth/decorators/current-user.decorator.js';
+import {
+  CurrentUser,
+  type JwtUser,
+} from '../auth/decorators/current-user.decorator.js';
 import { CycleService } from './cycle.service.js';
 import { CreateCycleDto } from './dto/create-cycle.dto.js';
 
@@ -28,7 +31,11 @@ export class CycleController {
     @Query('from') from: string,
     @Query('to') to: string,
   ) {
-    return this.cycle.getPhasesInRange(user.userId, new Date(from), new Date(to));
+    return this.cycle.getPhasesInRange(
+      user.userId,
+      new Date(from),
+      new Date(to),
+    );
   }
 
   @Get('prediction')

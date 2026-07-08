@@ -15,8 +15,10 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_SECRET'),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        signOptions: { expiresIn: config.get('JWT_ACCESS_EXPIRES_IN', '15m') as any },
+
+        signOptions: {
+          expiresIn: config.get('JWT_ACCESS_EXPIRES_IN', '15m'),
+        },
       }),
     }),
     MailModule,

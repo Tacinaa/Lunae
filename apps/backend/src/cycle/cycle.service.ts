@@ -15,7 +15,11 @@ export class CycleService {
       data: { userId, ...dto },
     });
 
-    const phases = this.algo.calculatePhases(dto.startDate, dto.cycleLength, dto.periodDuration);
+    const phases = this.algo.calculatePhases(
+      dto.startDate,
+      dto.cycleLength,
+      dto.periodDuration,
+    );
 
     await this.prisma.cyclePhase.createMany({
       data: phases.map((p) => ({

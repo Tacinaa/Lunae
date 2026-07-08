@@ -11,6 +11,8 @@ export class UpdateUserDto {
 
   @IsString()
   @IsOptional()
-  @Matches(/^\+?[0-9\s\-()]{7,20}$/, { message: 'Numéro de téléphone invalide' })
+  @Matches(/^\+?[0-9\s\-()]{7,20}$/, {
+    message: 'Numéro de téléphone invalide',
+  })
   phoneNumber?: string;
 }

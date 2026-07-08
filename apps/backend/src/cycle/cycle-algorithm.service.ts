@@ -15,7 +15,11 @@ export interface CycleInput {
 
 @Injectable()
 export class CycleAlgorithmService {
-  calculatePhases(startDate: Date, cycleLength: number, periodDuration: number): PhaseEntry[] {
+  calculatePhases(
+    startDate: Date,
+    cycleLength: number,
+    periodDuration: number,
+  ): PhaseEntry[] {
     const ovulationDay = cycleLength - 14;
     const entries: PhaseEntry[] = [];
 
@@ -32,7 +36,9 @@ export class CycleAlgorithmService {
   }
 
   getPhaseForDate(date: Date, cycles: CycleInput[]): Phase | null {
-    const sorted = [...cycles].sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
+    const sorted = [...cycles].sort(
+      (a, b) => b.startDate.getTime() - a.startDate.getTime(),
+    );
     const relevant = sorted.find((c) => c.startDate <= date);
     if (!relevant) return null;
 
@@ -43,17 +49,27 @@ export class CycleAlgorithmService {
     return this.phaseForDay(day, relevant.periodDuration, ovulationDay);
   }
 
-  predictNextPeriod(history: { startDate: Date; cycleLength: number }[], defaultLength = 28): Date {
+  predictNextPeriod(
+    history: { startDate: Date; cycleLength: number }[],
+    defaultLength = 28,
+  ): Date {
     const avgLength =
       history.length > 0
-        ? Math.round(history.reduce((s, c) => s + c.cycleLength, 0) / history.length)
+        ? Math.round(
+            history.reduce((s, c) => s + c.cycleLength, 0) / history.length,
+          )
         : defaultLength;
 
-    const lastStart = history.length > 0 ? history[history.length - 1].startDate : new Date();
+    const lastStart =
+      history.length > 0 ? history[history.length - 1].startDate : new Date();
     return this.addDays(lastStart, avgLength);
   }
 
-  private phaseForDay(day: number, periodDuration: number, ovulationDay: number): Phase {
+  private phaseForDay(
+    day: number,
+    periodDuration: number,
+    ovulationDay: number,
+  ): Phase {
     if (day < periodDuration) return Phase.menstruation;
     if (day < ovulationDay - 1) return Phase.follicular;
     if (day <= ovulationDay + 1) return Phase.ovulation;
@@ -71,6 +87,6 @@ export class CycleAlgorithmService {
   }
 
   private toDateString(date: Date): string {
-    return date.toISOString().split('T')[0]!;
+    return date.toISOString().split('T')[0];
   }
 }

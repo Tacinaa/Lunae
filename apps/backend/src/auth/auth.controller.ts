@@ -1,6 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { OtpType } from '@prisma/client';
 import { AuthService } from './auth.service.js';
 import { Public } from './decorators/public.decorator.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -46,6 +45,6 @@ export class AuthController {
   @Post('request-otp')
   @HttpCode(HttpStatus.OK)
   requestOtp(@Body() dto: RequestOtpDto) {
-    return this.auth.requestOtp(dto.email, dto.type as OtpType);
+    return this.auth.requestOtp(dto.email, dto.type);
   }
 }

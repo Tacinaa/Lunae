@@ -15,7 +15,10 @@ describe('CycleAlgorithmService', () => {
       expect(phases).toHaveLength(28);
 
       const counts = phases.reduce(
-        (acc, p) => { acc[p.phase] = (acc[p.phase] ?? 0) + 1; return acc; },
+        (acc, p) => {
+          acc[p.phase] = (acc[p.phase] ?? 0) + 1;
+          return acc;
+        },
         {} as Record<Phase, number>,
       );
       expect(counts[Phase.menstruation]).toBe(5);
@@ -76,9 +79,13 @@ describe('CycleAlgorithmService', () => {
     });
 
     it('1 cycle → utilise la longueur de ce cycle', () => {
-      const next = service.predictNextPeriod([{ startDate: J0, cycleLength: 30 }]);
+      const next = service.predictNextPeriod([
+        { startDate: J0, cycleLength: 30 },
+      ]);
       const expected = new Date('2026-01-31');
-      expect(next.toISOString().split('T')[0]).toBe(expected.toISOString().split('T')[0]);
+      expect(next.toISOString().split('T')[0]).toBe(
+        expected.toISOString().split('T')[0],
+      );
     });
 
     it('3 cycles → utilise la moyenne', () => {
@@ -89,7 +96,9 @@ describe('CycleAlgorithmService', () => {
       ];
       const next = service.predictNextPeriod(history);
       const expected = new Date('2025-12-26');
-      expect(next.toISOString().split('T')[0]).toBe(expected.toISOString().split('T')[0]);
+      expect(next.toISOString().split('T')[0]).toBe(
+        expected.toISOString().split('T')[0],
+      );
     });
   });
 });

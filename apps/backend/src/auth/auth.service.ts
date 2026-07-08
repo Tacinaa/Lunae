@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomInt, randomUUID } from 'crypto';
+import type { StringValue } from 'ms';
 import { OtpType } from '@prisma/client';
 import { MailService } from '../mail/mail.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -29,7 +30,9 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto): Promise<{ message: string }> {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
     if (existing) throw new ConflictException('Email déjà utilisé');
 
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
@@ -47,8 +50,11 @@ export class AuthService {
   }
 
   async login(dto: LoginDto): Promise<{ message: string }> {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
-    if (!user?.passwordHash) throw new UnauthorizedException('Identifiants invalides');
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (!user?.passwordHash)
+      throw new UnauthorizedException('Identifiants invalides');
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) throw new UnauthorizedException('Identifiants invalides');
@@ -71,23 +77,31 @@ export class AuthService {
     });
 
     if (!otp) throw new UnauthorizedException('Code invalide ou expiré');
-    if (otp.expiresAt < new Date()) throw new UnauthorizedException('Code expiré');
+    if (otp.expiresAt < new Date())
+      throw new UnauthorizedException('Code expiré');
 
     const valid = await bcrypt.compare(code, otp.code);
     if (!valid) throw new UnauthorizedException('Code invalide');
 
-    await this.prisma.otpCode.update({ where: { id: otp.id }, data: { used: true } });
+    await this.prisma.otpCode.update({
+      where: { id: otp.id },
+      data: { used: true },
+    });
 
     return this.issueTokens(user.id, user.email);
   }
 
   async refresh(token: string): Promise<{ accessToken: string }> {
-    const stored = await this.prisma.refreshToken.findUnique({ where: { token } });
+    const stored = await this.prisma.refreshToken.findUnique({
+      where: { token },
+    });
     if (!stored || stored.expiresAt < new Date()) {
       throw new UnauthorizedException('Refresh token invalide ou expiré');
     }
 
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: stored.userId } });
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: stored.userId },
+    });
     const accessToken = this.signAccessToken(user.id, user.email);
     return { accessToken };
   }
@@ -122,8 +136,11 @@ export class AuthService {
 
   private signAccessToken(userId: string, email: string): string {
     const expiresIn = this.config.get<string>('JWT_ACCESS_EXPIRES_IN', '15m');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this.jwt.sign({ sub: userId, email }, { expiresIn: expiresIn as any });
+
+    return this.jwt.sign(
+      { sub: userId, email },
+      { expiresIn: expiresIn as StringValue },
+    );
   }
 
   private async issueTokens(
@@ -135,7 +152,9 @@ export class AuthService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + REFRESH_TTL_DAYS);
 
-    await this.prisma.refreshToken.create({ data: { userId, token: refreshToken, expiresAt } });
+    await this.prisma.refreshToken.create({
+      data: { userId, token: refreshToken, expiresAt },
+    });
 
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
@@ -145,12 +164,18 @@ export class AuthService {
     return { accessToken, refreshToken, user };
   }
 
-  private async sendOtp(userId: string, email: string, type: OtpType): Promise<void> {
+  private async sendOtp(
+    userId: string,
+    email: string,
+    type: OtpType,
+  ): Promise<void> {
     const code = this.generateOtp();
     const codeHash = await bcrypt.hash(code, OTP_ROUNDS);
     const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
 
-    await this.prisma.otpCode.create({ data: { userId, code: codeHash, type, expiresAt } });
+    await this.prisma.otpCode.create({
+      data: { userId, code: codeHash, type, expiresAt },
+    });
     await this.mail.sendOtp(email, code);
   }
 }

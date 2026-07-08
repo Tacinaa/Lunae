@@ -224,14 +224,14 @@
 
 ### Infrastructure
 - [ ] Créer `Dockerfile` pour le backend NestJS (multi-stage build)
-- [ ] Créer `docker-compose.yml` pour développement local (backend + PostgreSQL)
+- [x] Créer `docker-compose.yml` pour développement local (PostgreSQL ; backend pas encore containerisé)
 - [ ] Configurer les variables d'environnement Railway/Render (secrets)
 - [ ] Déployer le backend sur Railway ou Render
 
 ### CI/CD (GitHub Actions)
-- [ ] Créer `.github/workflows/ci.yml` :
-  - [ ] Déclenché sur `push` vers `main` et `pull_request`
-  - [ ] Job `test` : checkout → `npm ci` → ESLint → Jest (couverture) → Build TS
+- [x] Créer `.github/workflows/ci.yml` (mis en place dès v0.1 plutôt qu'à la fin, pour attraper les régressions au fil de l'eau) :
+  - [x] Déclenché sur `push` vers `master` et `pull_request`
+  - [x] Job `backend` : checkout → `npm ci` → ESLint → Jest (couverture) → Build TS
   - [ ] Job `deploy` (dépend de `test`) : build image Docker → push registry → déploiement Railway
 
 ### Qualité et tests

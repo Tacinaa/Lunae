@@ -1,5 +1,8 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import { CurrentUser, type JwtUser } from '../auth/decorators/current-user.decorator.js';
+import {
+  CurrentUser,
+  type JwtUser,
+} from '../auth/decorators/current-user.decorator.js';
 import type { UpdateUserDto } from './dto/update-user.dto.js';
 import { UserService } from './user.service.js';
 
