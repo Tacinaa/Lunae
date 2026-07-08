@@ -1,0 +1,279 @@
+# TODO — Lunae MVP
+
+> Jalons : v0.1 (J+3) → v0.2 (J+5) → v0.3 (J+7) → v0.4 (J+9) → v1.0 (J+14)
+
+---
+
+## v0.1 — Backend : Auth + BDD + Cycle (J+3)
+
+### Setup backend
+- [x] `cd apps/backend && npx @nestjs/cli new . --package-manager npm`
+- [x] Installer les dépendances : `@nestjs/config`, `@nestjs/jwt`, `@nestjs/passport`, `passport-jwt`, `bcrypt`, `class-validator`, `class-transformer`, `prisma`, `@prisma/client`, `nodemailer`
+- [ ] Configurer `.env` : `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `SMTP_*`
+- [ ] Activer `ValidationPipe` globale dans `main.ts`
+- [ ] Configurer `ConfigModule` global
+
+### Base de données (Prisma)
+- [x] `npx prisma init`
+- [ ] Écrire le schéma Prisma complet (`schema.prisma`) avec les entités : `User`, `CycleEntry`, `CyclePhase`, `Calendar`, `Event`, `MoveSuggestion`, `Invitation`, `RefreshToken`, `OtpCode`
+- [ ] `npx prisma migrate dev --name init`
+- [ ] Créer `PrismaService` injectable
+
+### Module Auth
+- [ ] Générer `AuthModule`, `AuthService`, `AuthController`
+- [ ] `POST /auth/register` — créer un utilisateur + hasher le password (bcrypt 12) + générer OTP + envoyer email
+- [ ] `POST /auth/verify-otp` — vérifier code 6 chiffres (haché, expiration 10 min, usage unique) → émettre access + refresh tokens
+- [ ] `POST /auth/login` — vérifier email/password → générer OTP si MFA, sinon émettre tokens
+- [ ] `POST /auth/refresh` — valider refresh token → émettre nouveau access token
+- [ ] `POST /auth/logout` — révoquer refresh token en BDD
+- [ ] `POST /auth/request-otp` — renvoi d'un OTP
+- [ ] Implémenter `JwtAuthGuard` (passport-jwt) appliqué globalement sauf `AuthModule`
+- [ ] Rate limiting sur les endpoints auth (throttler NestJS : 5 req / 15 min)
+- [ ] **Tests unitaires Auth** :
+  - [ ] `hashPassword()` retourne un hash différent du mdp en clair
+  - [ ] `validatePassword()` — bon mdp → true, mauvais mdp → false
+  - [ ] `generateOtp()` → chaîne de 6 chiffres
+  - [ ] `isOtpExpired()` — OTP de 15 min → true, OTP de 5 min → false
+
+### Module User
+- [ ] Générer `UserModule`, `UserService`, `UserController`
+- [ ] `GET /users/me` — retourner le profil courant (sans passwordHash)
+- [ ] `PATCH /users/me` — mettre à jour firstName, lastName, phoneNumber
+
+### Module Cycle
+- [ ] Générer `CycleModule`, `CycleService`, `CycleController`
+- [ ] `POST /cycle` — enregistrer un nouveau `CycleEntry` + recalculer les `CyclePhase`
+- [ ] `GET /cycle` — historique des cycles de l'utilisatrice
+- [ ] `GET /cycle/current-phase` — phase en cours + numéro de jour du cycle
+- [ ] `GET /cycle/phases?from=&to=` — phases prédites sur une période (pour alimenter le calendrier)
+- [ ] `GET /cycle/prediction` — date prédite du prochain cycle (moyenne des N derniers cycles)
+- [ ] Implémenter `CycleAlgorithmService` (logique pure, sans BDD) :
+  - [ ] `calculatePhases(startDate, cycleLength, periodDuration)` → tableau `{ date, phase }`
+  - [ ] `predictNextPeriod(cycleHistory)` → date (moyenne des durées)
+  - [ ] `getPhaseForDate(date, cycleEntries)` → phase ou null
+- [ ] **Tests unitaires Cycle** :
+  - [ ] `calculatePhases()` — cycle 28j, règles 5j → 4 phases correctes (5 + 8 + 3 + 12 jours)
+  - [ ] `calculatePhases()` — cycle court 21j → phases ajustées
+  - [ ] `calculatePhases()` — cycle long 35j → phases ajustées
+  - [ ] `predictNextPeriod()` — 1 cycle → utilise la valeur saisie
+  - [ ] `predictNextPeriod()` — 3 cycles → utilise la moyenne
+  - [ ] `getPhaseForDate()` — date en menstruation → `'menstruation'`
+  - [ ] `getPhaseForDate()` — date hors cycle → `null`
+
+---
+
+## v0.2 — Frontend : Onboarding + Auth + Saisie cycle (J+5)
+
+### Setup frontend
+- [ ] `cd apps/frontend && npx create-expo-app . --template blank-typescript`
+- [ ] Installer : `@react-navigation/native`, `@react-navigation/native-stack`, `@react-navigation/bottom-tabs`, `react-native-screens`, `react-native-safe-area-context`
+- [ ] Installer : `zustand`, `axios`, `@react-native-async-storage/async-storage`
+- [ ] Installer : `react-native-gesture-handler`, `react-native-reanimated`
+- [ ] Configurer `babel.config.js` pour Reanimated
+- [ ] Créer la structure de dossiers :
+  ```
+  src/
+  ├── api/         # client Axios + intercepteurs
+  ├── components/  # composants réutilisables
+  ├── navigation/  # stacks et navigateurs
+  ├── screens/     # un dossier par écran
+  ├── store/       # stores Zustand (auth, cycle, calendar)
+  ├── hooks/       # hooks custom
+  └── utils/       # helpers
+  ```
+- [ ] Créer le client Axios (`src/api/client.ts`) avec intercepteur pour injecter le JWT et gérer le refresh automatique (retry sur 401)
+- [ ] Créer `AuthStore` Zustand : `accessToken`, `user`, `setTokens()`, `logout()`
+- [ ] Créer `CycleStore` Zustand : `cycleData`, `phases`, `currentPhase`
+
+### Navigation
+- [ ] Créer `RootNavigator` : stack `Auth` (non connecté) + stack `App` (connecté)
+- [ ] Stack Auth : `Onboarding` → `Welcome` → `Login` / `Register` → `OtpVerification` → `CycleSetup` → `CalendarPermission` → `CalendarImport` → `Ready`
+- [ ] Stack App : `MainCalendar` (écran principal)
+
+### Écran 01 — Onboarding (3 slides)
+- [ ] Composant `OnboardingScreen` avec `FlatList` horizontal ou `PagerView`
+- [ ] 3 slides avec illustration, titre, texte, bouton CTA
+- [ ] Indicateur de progression (3 points)
+- [ ] Bouton "Suivant" / "C'est parti !" sur le dernier slide → navigue vers `Welcome`
+- [ ] Persister en AsyncStorage que l'onboarding a été vu (pour ne pas le reshow)
+
+### Écran 02 — Welcome / Auth
+- [ ] Logo Lunae (lune + étoiles + "28")
+- [ ] Bouton "Continuer avec Apple" (placeholder pour le MVP)
+- [ ] Bouton "Continuer avec Google" (placeholder pour le MVP)
+- [ ] Champ email + bouton "Continuer avec un email"
+- [ ] Appel `GET /auth/check-email` ou logique : si email existe → Login, sinon → Register
+
+### Écran 03 — Connexion (email existant)
+- [ ] Champ email pré-rempli (désactivé)
+- [ ] Champ mot de passe
+- [ ] Bouton "Continuer" → `POST /auth/login` → navigue vers OTP
+
+### Écran 04 — Inscription
+- [ ] Champs : prénom, nom, email, mot de passe
+- [ ] Bouton "Continuer" → `POST /auth/register` → navigue vers OTP
+
+### Écran 04 — Vérification OTP
+- [ ] 6 cases de saisie individuelles (auto-focus suivant)
+- [ ] Bouton "Suivant" → `POST /auth/verify-otp`
+- [ ] Lien "Renvoyer le code" → `POST /auth/request-otp`
+- [ ] Afficher l'email masqué dans le texte
+
+### Écran 07 — Saisie du cycle
+- [ ] Date picker : "Date de début de vos dernières règles"
+- [ ] Stepper : "Durée du cycle" (21–35, défaut 28)
+- [ ] Stepper : "Durée des règles" (2–8, défaut 5)
+- [ ] Bouton "Continuer" → `POST /cycle` → navigue vers `CalendarPermission`
+
+### Écran 08 — Autorisation calendrier
+- [ ] Texte explicatif
+- [ ] Bouton "Autoriser l'accès" → demande permission native Expo (`expo-calendar`)
+- [ ] → navigue vers `CalendarImport`
+
+### Écran 09 — Import de calendriers
+- [ ] Liste : Apple (+), Google (+), Microsoft (+)
+- [ ] Section "Comptes importés" avec bouton ×
+- [ ] Bouton "Suivant" → navigue vers `Ready`
+
+### Écran 10 — Confirmation finale
+- [ ] Logo + "Tout est prêt !" + bouton "Commencer" → navigue vers `MainCalendar`
+
+---
+
+## v0.3 — Calendrier + Import (J+7)
+
+### Backend — Module Calendar
+- [ ] Générer `CalendarModule`, `CalendarService`, `CalendarController`
+- [ ] `GET /calendars` — liste des calendriers de l'utilisatrice
+- [ ] `POST /calendars` — créer un calendrier local
+- [ ] `DELETE /calendars/:id` — supprimer un calendrier
+- [ ] `GET /events?from=&to=` — événements sur une période, enrichis avec la phase du cycle
+- [ ] `GET /events/:id` — détail d'un événement
+- [ ] `POST /events` — créer un événement
+- [ ] `PATCH /events/:id` — modifier un événement
+- [ ] `DELETE /events/:id` — supprimer un événement
+- [ ] `GET /events/search?q=` — recherche plein texte (ILIKE sur title)
+- [ ] `POST /calendars/import/google` — OAuth2 Google Calendar → stocker token + sync initiale
+- [ ] `POST /calendars/import/apple` — CalDAV Apple → stocker credentials + sync initiale
+- [ ] `POST /calendars/import/microsoft` — OAuth2 Microsoft → stocker token + sync initiale
+- [ ] `POST /calendars/:id/sync` — synchronisation incrémentale (syncToken)
+
+### Frontend — Écran 11 — Calendrier principal
+- [ ] Grille mensuelle custom (ou `react-native-calendars`)
+- [ ] Navigation mois précédent / suivant
+- [ ] Aujourd'hui cerclé en violet
+- [ ] Bandes de couleur horizontales par semaine selon la phase (`GET /cycle/phases?from=&to=`)
+- [ ] Événements sous les jours (tronqués à ~12 chars)
+- [ ] Icônes barre sup : 🔍 Recherche, 📥 Invitations, ⚙️ Paramètres
+- [ ] Bouton "Aujourd'hui" (bas)
+- [ ] Bouton "Calendriers" (filtre) (bas)
+- [ ] FAB "+" → créer un événement
+
+### Frontend — Écran 12 — Détail d'un événement (bottom sheet)
+- [ ] Bottom sheet avec `@gorhom/bottom-sheet`
+- [ ] Titre, date, horaire, lieu, calendrier (couleur), notes
+- [ ] Indicateur de phase : "Non concerné" OU `[phase] — [recommandation]`
+- [ ] Bouton "Voir les suggestions" si phase défavorable + événement déplaçable
+- [ ] Bouton "Se désinscrire" pour événements importés
+
+### Frontend — Écran 15 — Recherche (bottom sheet)
+- [ ] Champ de recherche avec debounce (300ms)
+- [ ] Appel `GET /events/search?q=`
+- [ ] Résultats groupés par date
+
+---
+
+## v0.4 — Suggestions + Invitations + Tests (J+9)
+
+### Backend — Module Recommendation
+- [ ] Générer `RecommendationModule`, `RecommendationService`, `RecommendationController`
+- [ ] `GET /suggestions` — suggestions en attente (status: 'pending')
+- [ ] `POST /suggestions/:id/accept` — appliquer le déplacement (`PATCH /events/:id` interne)
+- [ ] `POST /suggestions/:id/dismiss` — ignorer la suggestion
+- [ ] Implémenter la logique de génération des suggestions :
+  - [ ] `shouldSuggestMove(event, phase)` → boolean
+  - [ ] `generateSuggestions(event, phaseCalendar, existingEvents)` → créneaux triés par score
+  - [ ] Déclencher la génération au moment de la création/modification d'un événement
+- [ ] **Tests unitaires Recommendations** :
+  - [ ] `shouldSuggestMove()` — événement en menstruation + isMovable=true → true
+  - [ ] `shouldSuggestMove()` — isMovable=false → false
+  - [ ] `shouldSuggestMove()` — événement en ovulation → false
+  - [ ] `generateSuggestions()` — créneaux triés par score décroissant (ovulation=3, folliculaire=2, lutéale=1)
+  - [ ] `generateSuggestions()` — exclut les créneaux déjà occupés
+
+### Backend — Module Invitation
+- [ ] Générer `InvitationModule`, `InvitationService`, `InvitationController`
+- [ ] `GET /invitations` — invitations reçues + répondues
+- [ ] `PATCH /invitations/:id` — répondre (accepted / declined / maybe)
+
+### Frontend — Écran 13 — Suggestion de déplacement
+- [ ] Modal/bottom sheet depuis le détail événement
+- [ ] Description de la phase actuelle et pourquoi elle est défavorable
+- [ ] Liste des créneaux alternatifs (date, heure, phase, couleur)
+- [ ] Bouton "Choisir ce créneau" → `POST /suggestions/:id/accept`
+- [ ] Bouton "Garder la date actuelle" → `POST /suggestions/:id/dismiss`
+
+### Frontend — Écran 14 — Invitations (bottom sheet)
+- [ ] Onglets "Reçues" / "Répondues"
+- [ ] Pour chaque invitation : titre, date, horaire, boutons Peut-être / Refuser / Accepter
+- [ ] Appel `PATCH /invitations/:id` au tap
+
+---
+
+## v1.0 — MVP complet : CI/CD + Déploiement + QA (J+14)
+
+### Infrastructure
+- [ ] Créer `Dockerfile` pour le backend NestJS (multi-stage build)
+- [ ] Créer `docker-compose.yml` pour développement local (backend + PostgreSQL)
+- [ ] Configurer les variables d'environnement Railway/Render (secrets)
+- [ ] Déployer le backend sur Railway ou Render
+
+### CI/CD (GitHub Actions)
+- [ ] Créer `.github/workflows/ci.yml` :
+  - [ ] Déclenché sur `push` vers `main` et `pull_request`
+  - [ ] Job `test` : checkout → `npm ci` → ESLint → Jest (couverture) → Build TS
+  - [ ] Job `deploy` (dépend de `test`) : build image Docker → push registry → déploiement Railway
+
+### Qualité et tests
+- [ ] Configurer Jest avec rapport de couverture (seuil minimum 80% sur les modules core)
+- [ ] Passer tous les tests unitaires définis en v0.1 et v0.4 au vert
+- [ ] Cahier de recette — vérifier manuellement CR-01 à CR-12 :
+  - [ ] CR-01 : Inscription email valide → OTP reçu
+  - [ ] CR-02 : Email déjà utilisé → erreur claire
+  - [ ] CR-03 : OTP correct → accès accordé
+  - [ ] CR-04 : OTP expiré → message d'erreur
+  - [ ] CR-05 : Saisie cycle → phase correcte dans le calendrier
+  - [ ] CR-06 : Vue mensuelle → 4 bandes de couleur visibles
+  - [ ] CR-07 : Événement en menstruation déplaçable → suggestion proposée
+  - [ ] CR-08 : Accepter une suggestion → événement déplacé
+  - [ ] CR-09 : Import Google Calendar → événements visibles
+  - [ ] CR-10 : Recherche "Boxe" → résultats filtrés
+  - [ ] CR-11 : Accepter invitation → statut "Accepté"
+  - [ ] CR-12 : Token expiré → 401 + refresh automatique
+
+### Accessibilité (WCAG AA)
+- [ ] Vérifier ratio de contraste violet #6B3FA0 sur fond blanc (≥ 4.5:1)
+- [ ] Ajouter `accessibilityLabel` sur tous les boutons et éléments interactifs
+- [ ] Vérifier tailles de zones tactiles ≥ 44×44 dp
+- [ ] Tester avec VoiceOver (iOS) et TalkBack (Android)
+- [ ] Chaque phase du cycle a couleur + icône + label texte (pas de dépendance couleur seule)
+
+### RGPD
+- [ ] Ajouter `DELETE /users/me` → suppression en cascade de toutes les données
+- [ ] Écran de consentement explicite lors de l'onboarding (avant la saisie du cycle)
+- [ ] Vérifier le chiffrement des colonnes de données de cycle en BDD
+
+### Build Expo
+- [ ] Configurer `eas.json` pour EAS Build (profiles development, preview, production)
+- [ ] `eas build --platform all --profile preview` → générer les binaires de test
+
+---
+
+## Backlog post-MVP (hors scope)
+
+- Abonnement premium / Stripe
+- Journalisation des symptômes
+- Partage de calendrier avec un partenaire
+- Notifications push avancées
+- Passkey / 2FA SMS (P2 — optionnel)
+- Bouton "Continuer avec Apple / Google" (SSO)
