@@ -84,6 +84,8 @@
 - [ ] Créer le client Axios (`src/api/client.ts`) avec intercepteur pour injecter le JWT et gérer le refresh automatique (retry sur 401)
 - [ ] Créer `AuthStore` Zustand : `accessToken`, `user`, `setTokens()`, `logout()`
 - [ ] Créer `CycleStore` Zustand : `cycleData`, `phases`, `currentPhase`
+- [ ] Installer les dépendances de test : `jest-expo`, `@testing-library/react-native`
+- [ ] Configurer Jest (preset `jest-expo`) + script `test` dans `package.json`
 
 ### Navigation
 - [ ] Créer `RootNavigator` : stack `Auth` (non connecté) + stack `App` (connecté)
@@ -138,6 +140,12 @@
 ### Écran 10 — Confirmation finale
 - [ ] Logo + "Tout est prêt !" + bouton "Commencer" → navigue vers `MainCalendar`
 
+### Tests unitaires (frontend)
+- [ ] `AuthStore` — `setTokens()` met à jour `accessToken`/`user` ; `logout()` réinitialise l'état
+- [ ] `CycleStore` — mise à jour de `cycleData`/`phases`/`currentPhase`
+- [ ] Client Axios — intercepteur : requête en 401 déclenche un refresh puis rejoue la requête d'origine ; refresh échoué → `logout()`
+- [ ] Helper de persistance "onboarding vu" (AsyncStorage) — écrit puis relit correctement le flag
+
 ---
 
 ## v0.3 — Calendrier + Import (J+7)
@@ -180,6 +188,10 @@
 - [ ] Champ de recherche avec debounce (300ms)
 - [ ] Appel `GET /events/search?q=`
 - [ ] Résultats groupés par date
+
+### Tests unitaires (frontend)
+- [ ] Mapping phase → couleur (bandes du calendrier) — chaque `Phase` retourne la bonne couleur
+- [ ] Hook de debounce de la recherche — n'appelle l'API qu'après le délai, annule l'appel précédent si nouvelle frappe
 
 ---
 
@@ -232,11 +244,12 @@
 - [x] Créer `.github/workflows/ci.yml` (mis en place dès v0.1 plutôt qu'à la fin, pour attraper les régressions au fil de l'eau) :
   - [x] Déclenché sur `push` vers `master` et `pull_request`
   - [x] Job `backend` : checkout → `npm ci` → ESLint → Jest (couverture) → Build TS
+  - [ ] Job `frontend` : checkout → `npm ci` → ESLint → Jest (`jest-expo`, couverture) — à ajouter une fois le projet Expo initialisé (v0.2)
   - [ ] Job `deploy` (dépend de `test`) : build image Docker → push registry → déploiement Railway
 
 ### Qualité et tests
-- [ ] Configurer Jest avec rapport de couverture (seuil minimum 80% sur les modules core)
-- [ ] Passer tous les tests unitaires définis en v0.1 et v0.4 au vert
+- [ ] Configurer Jest avec rapport de couverture (seuil minimum 80% sur les modules core), backend et frontend
+- [ ] Passer tous les tests unitaires définis en v0.1, v0.2, v0.3 et v0.4 au vert (aucun test e2e prévu — hors scope du projet)
 - [ ] Cahier de recette — vérifier manuellement CR-01 à CR-12 :
   - [ ] CR-01 : Inscription email valide → OTP reçu
   - [ ] CR-02 : Email déjà utilisé → erreur claire
