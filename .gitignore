@@ -14,6 +14,7 @@ dist/
 build/
 .expo/
 .expo-shared/
+*.tsbuildinfo
 
 # Prisma generated client
 apps/backend/generated/

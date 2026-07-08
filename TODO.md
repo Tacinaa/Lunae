@@ -248,6 +248,7 @@
   - [ ] Job `deploy` (dépend de `test`) : build image Docker → push registry → déploiement Railway
 
 ### Qualité et tests
+- [x] Supprimer le boilerplate e2e généré par défaut par `nest new` (`test/app.e2e-spec.ts`, `test/jest-e2e.json`, script `test:e2e`, dépendance `supertest`) — aucun test e2e n'est prévu sur ce projet
 - [ ] Configurer Jest avec rapport de couverture (seuil minimum 80% sur les modules core), backend et frontend
 - [ ] Passer tous les tests unitaires définis en v0.1, v0.2, v0.3 et v0.4 au vert (aucun test e2e prévu — hors scope du projet)
 - [ ] Cahier de recette — vérifier manuellement CR-01 à CR-12 :
