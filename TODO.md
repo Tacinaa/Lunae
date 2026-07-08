@@ -65,12 +65,12 @@
 ## v0.2 — Frontend : Onboarding + Auth + Saisie cycle (J+5)
 
 ### Setup frontend
-- [ ] `cd apps/frontend && npx create-expo-app . --template blank-typescript`
-- [ ] Installer : `@react-navigation/native`, `@react-navigation/native-stack`, `@react-navigation/bottom-tabs`, `react-native-screens`, `react-native-safe-area-context`
-- [ ] Installer : `zustand`, `axios`, `@react-native-async-storage/async-storage`
-- [ ] Installer : `react-native-gesture-handler`, `react-native-reanimated`
-- [ ] Configurer `babel.config.js` pour Reanimated
-- [ ] Créer la structure de dossiers :
+- [x] `cd apps/frontend && npx create-expo-app . --template blank-typescript` (SDK 57, validé avec l'utilisateur plutôt que le SDK 52 mentionné initialement dans CLAUDE.md)
+- [x] Installer : `@react-navigation/native`, `@react-navigation/native-stack`, `@react-navigation/bottom-tabs`, `react-native-screens`, `react-native-safe-area-context`
+- [x] Installer : `zustand`, `axios`, `@react-native-async-storage/async-storage`
+- [x] Installer : `react-native-gesture-handler`, `react-native-reanimated`
+- [x] Configurer `babel.config.js` pour Reanimated (plugin `react-native-worklets/plugin`, requis par Reanimated v4)
+- [x] Créer la structure de dossiers :
   ```
   src/
   ├── api/         # client Axios + intercepteurs
@@ -81,11 +81,11 @@
   ├── hooks/       # hooks custom
   └── utils/       # helpers
   ```
-- [ ] Créer le client Axios (`src/api/client.ts`) avec intercepteur pour injecter le JWT et gérer le refresh automatique (retry sur 401)
-- [ ] Créer `AuthStore` Zustand : `accessToken`, `user`, `setTokens()`, `logout()`
-- [ ] Créer `CycleStore` Zustand : `cycleData`, `phases`, `currentPhase`
-- [ ] Installer les dépendances de test : `jest-expo`, `@testing-library/react-native`
-- [ ] Configurer Jest (preset `jest-expo`) + script `test` dans `package.json`
+- [x] Créer le client Axios (`src/api/client.ts`) avec intercepteur pour injecter le JWT et gérer le refresh automatique (retry sur 401)
+- [x] Créer `AuthStore` Zustand : `accessToken`, `user`, `setTokens()`, `logout()` (persisté en AsyncStorage)
+- [x] Créer `CycleStore` Zustand : `cycleData`, `phases`, `currentPhase`
+- [x] Installer les dépendances de test : `jest-expo`, `@testing-library/react-native`
+- [x] Configurer Jest (preset `jest-expo`) + script `test` dans `package.json`
 
 ### Navigation
 - [ ] Créer `RootNavigator` : stack `Auth` (non connecté) + stack `App` (connecté)
@@ -141,10 +141,10 @@
 - [ ] Logo + "Tout est prêt !" + bouton "Commencer" → navigue vers `MainCalendar`
 
 ### Tests unitaires (frontend)
-- [ ] `AuthStore` — `setTokens()` met à jour `accessToken`/`user` ; `logout()` réinitialise l'état
-- [ ] `CycleStore` — mise à jour de `cycleData`/`phases`/`currentPhase`
-- [ ] Client Axios — intercepteur : requête en 401 déclenche un refresh puis rejoue la requête d'origine ; refresh échoué → `logout()`
-- [ ] Helper de persistance "onboarding vu" (AsyncStorage) — écrit puis relit correctement le flag
+- [x] `AuthStore` — `setTokens()` met à jour `accessToken`/`user` ; `logout()` réinitialise l'état
+- [x] `CycleStore` — mise à jour de `cycleData`/`phases`/`currentPhase`
+- [x] Client Axios — intercepteur : requête en 401 déclenche un refresh puis rejoue la requête d'origine ; refresh échoué → `logout()`
+- [x] Helper de persistance "onboarding vu" (AsyncStorage) — écrit puis relit correctement le flag
 
 ---
 
