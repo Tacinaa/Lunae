@@ -123,10 +123,10 @@
 - [x] Afficher l'email masqué dans le texte
 
 ### Écran 07 — Saisie du cycle
-- [ ] Date picker : "Date de début de vos dernières règles"
-- [ ] Stepper : "Durée du cycle" (21–35, défaut 28)
-- [ ] Stepper : "Durée des règles" (2–8, défaut 5)
-- [ ] Bouton "Continuer" → `POST /cycle` → navigue vers `CalendarPermission`
+- [x] Date picker : "Date de début de vos dernières règles" (`@react-native-community/datetimepicker` — natif iOS/Android, l'app est mobile-only donc pas de fallback web ; `onChange` déprécié → migré vers `onValueChange`/`onDismiss`, warning constaté en test sur Expo Go)
+- [x] Stepper : "Durée du cycle" (21–35, défaut 28)
+- [x] Stepper : "Durée des règles" (2–8, défaut 5)
+- [x] Bouton "Continuer" → `POST /cycle` → navigue vers `CalendarPermission`
 
 ### Écran 08 — Autorisation calendrier
 - [ ] Texte explicatif
