@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { AuthStackParamList } from '../../navigation/types';
 import { colors } from '../../utils/theme';
 
@@ -25,7 +26,7 @@ export function WelcomeScreen({ navigation }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.logo}>
         <Text style={styles.logoEmoji}>🌙 ✨</Text>
         <Text style={styles.logoText}>Lunae</Text>
@@ -89,7 +90,7 @@ export function WelcomeScreen({ navigation }: Props) {
           Vous avez déjà un compte ? <Text style={styles.loginLinkTextBold}>Se connecter</Text>
         </Text>
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }
 

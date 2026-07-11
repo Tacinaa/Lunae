@@ -10,6 +10,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { AuthStackParamList } from '../../navigation/types';
 import { colors } from '../../utils/theme';
 import { setOnboardingSeen } from '../../utils/onboarding';
@@ -77,7 +78,7 @@ export function OnboardingScreen({ navigation }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Pressable
         style={styles.skip}
         onPress={goToWelcome}
@@ -124,7 +125,7 @@ export function OnboardingScreen({ navigation }: Props) {
       >
         <Text style={styles.ctaText}>{isLastSlide ? "C'est parti !" : 'Suivant'}</Text>
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }
 

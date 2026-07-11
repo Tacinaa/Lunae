@@ -6,9 +6,10 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { login } from '../../api/auth';
+import { BackButton } from '../../components/BackButton';
 import type { AuthStackParamList } from '../../navigation/types';
 import { colors } from '../../utils/theme';
 import { getErrorMessage } from '../../utils/errors';
@@ -37,7 +38,8 @@ export function LoginScreen({ navigation, route }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <BackButton onPress={() => navigation.goBack()} />
       <Text style={styles.title}>Connexion</Text>
 
       <Text style={styles.label}>Email</Text>
@@ -80,7 +82,7 @@ export function LoginScreen({ navigation, route }: Props) {
           <Text style={styles.buttonText}>Continuer</Text>
         )}
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }
 

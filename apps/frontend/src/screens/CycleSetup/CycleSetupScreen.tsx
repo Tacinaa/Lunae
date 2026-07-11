@@ -4,6 +4,7 @@ import DateTimePicker, {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { createCycle } from '../../api/cycle';
 import type { OnboardingSetupStackParamList } from '../../navigation/types';
 import { useCycleStore } from '../../store/cycleStore';
@@ -90,7 +91,7 @@ export function CycleSetupScreen({ navigation }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Votre cycle</Text>
       <Text style={styles.subtitle}>
         Ces informations nous permettent de calculer vos phases et de vous proposer les meilleurs
@@ -147,7 +148,7 @@ export function CycleSetupScreen({ navigation }: Props) {
           <Text style={styles.buttonText}>Continuer</Text>
         )}
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }
 

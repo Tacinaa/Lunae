@@ -129,14 +129,14 @@
 - [x] Bouton "Continuer" → `POST /cycle` → navigue vers `CalendarPermission`
 
 ### Écran 08 — Autorisation calendrier
-- [ ] Texte explicatif
-- [ ] Bouton "Autoriser l'accès" → demande permission native Expo (`expo-calendar`)
-- [ ] → navigue vers `CalendarImport`
+- [x] Texte explicatif
+- [x] Bouton "Autoriser l'accès" → demande permission native Expo (`expo-calendar` — nouvelle API objet non fonctionnelle sur Expo Go, import requis depuis `expo-calendar/legacy`)
+- [x] → navigue vers `CalendarImport` (accordé ou refusé — l'import reste possible/optionnel à l'étape suivante)
 
 ### Écran 09 — Import de calendriers
-- [ ] Liste : Apple (+), Google (+), Microsoft (+)
-- [ ] Section "Comptes importés" avec bouton ×
-- [ ] Bouton "Suivant" → navigue vers `Ready`
+- [x] Liste : Apple (+), Google (+), Microsoft (+)
+- [x] Section "Comptes importés" avec bouton × (état local uniquement — pas d'appel API : `POST /calendars/import/*` pas encore implémenté côté backend, prévu v0.3 ; comportement identique aux boutons SSO placeholder du Welcome)
+- [x] Bouton "Suivant" → navigue vers `Ready`
 
 ### Écran 10 — Confirmation finale
 - [x] Logo + "Tout est prêt !" + bouton "Commencer" → `completeOnboarding()` débloque `AppNavigator`/`MainCalendar`

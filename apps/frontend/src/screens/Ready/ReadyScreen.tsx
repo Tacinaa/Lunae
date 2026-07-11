@@ -1,5 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { OnboardingSetupStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/authStore';
 import { colors } from '../../utils/theme';
@@ -10,7 +11,7 @@ export function ReadyScreen(_props: Props) {
   const completeOnboarding = useAuthStore((state) => state.completeOnboarding);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.emoji}>🌙 ✨</Text>
       <Text style={styles.title}>Tout est prêt !</Text>
       <Text style={styles.text}>
@@ -25,7 +26,7 @@ export function ReadyScreen(_props: Props) {
       >
         <Text style={styles.ctaText}>Commencer</Text>
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }
 

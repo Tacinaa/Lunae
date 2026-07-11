@@ -8,7 +8,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { requestOtp, verifyOtp } from '../../api/auth';
+import { BackButton } from '../../components/BackButton';
 import type { AuthStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/authStore';
 import { getErrorMessage } from '../../utils/errors';
@@ -25,7 +27,7 @@ function maskEmail(email: string): string {
   return `${visible}${'*'.repeat(Math.max(name.length - 2, 1))}@${domain}`;
 }
 
-export function OtpVerificationScreen({ route }: Props) {
+export function OtpVerificationScreen({ route, navigation }: Props) {
   const { email, type } = route.params;
   const setTokens = useAuthStore((state) => state.setTokens);
   const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(''));
@@ -85,7 +87,8 @@ export function OtpVerificationScreen({ route }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <BackButton onPress={() => navigation.goBack()} />
       <Text style={styles.title}>Vérification</Text>
       <Text style={styles.subtitle}>
         Entrez le code à 6 chiffres envoyé à {maskEmail(email)}
@@ -125,7 +128,7 @@ export function OtpVerificationScreen({ route }: Props) {
           {isResending ? 'Envoi en cours...' : 'Renvoyer le code'}
         </Text>
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }
 

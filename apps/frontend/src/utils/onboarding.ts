@@ -10,3 +10,7 @@ export async function hasSeenOnboarding(): Promise<boolean> {
 export async function setOnboardingSeen(): Promise<void> {
   await AsyncStorage.setItem(ONBOARDING_SEEN_KEY, 'true');
 }
+
+export async function resetOnboardingSeen(): Promise<void> {
+  await AsyncStorage.removeItem(ONBOARDING_SEEN_KEY);
+}

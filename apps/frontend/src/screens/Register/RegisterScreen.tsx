@@ -6,9 +6,10 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { register } from '../../api/auth';
+import { BackButton } from '../../components/BackButton';
 import type { AuthStackParamList } from '../../navigation/types';
 import { colors } from '../../utils/theme';
 import { getErrorMessage } from '../../utils/errors';
@@ -44,7 +45,8 @@ export function RegisterScreen({ navigation, route }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <BackButton onPress={() => navigation.goBack()} />
       <Text style={styles.title}>Inscription</Text>
 
       <TextInput
@@ -100,7 +102,7 @@ export function RegisterScreen({ navigation, route }: Props) {
           <Text style={styles.buttonText}>Continuer</Text>
         )}
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }
 
