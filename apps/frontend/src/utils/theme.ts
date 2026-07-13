@@ -8,10 +8,10 @@ export const colors = {
 };
 
 export const phaseColors = {
-  menstruation: '#E05A7E',
-  follicular: '#26C485',
-  ovulation: '#3A9CFF',
-  luteal: '#E87325',
+  menstruation: '#491D5D',
+  follicular: '#8361D1',
+  ovulation: '#E1378C',
+  luteal: '#A63FA6',
 } as const;
 
 export function getPhaseColor(phase: keyof typeof phaseColors): string {

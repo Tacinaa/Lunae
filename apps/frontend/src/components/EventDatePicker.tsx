@@ -5,7 +5,7 @@ import { getPhasesInRange } from '../api/cycle';
 import type { Phase, PhaseEntry } from '../store/cycleStore';
 import { MONTH_LABELS, WEEKDAY_LABELS, getMonthMatrix, isSameDay, toDateKey } from '../utils/calendarGrid';
 import { isFavorablePhase, isUnfavorablePhase } from '../utils/phaseRecommendation';
-import { colors, getPhaseColor, hexToRgba } from '../utils/theme';
+import { colors, getPhaseColor } from '../utils/theme';
 
 interface Props {
   value: Date;
@@ -158,8 +158,13 @@ export function EventDatePicker({
                 <View
                   style={[
                     styles.dayCircle,
-                    isSuggested && { backgroundColor: hexToRgba(getPhaseColor('ovulation'), 0.3) },
-                    isSelected && { backgroundColor: selectionColor },
+                    isSuggested && {
+                      backgroundColor: colors.background,
+                      borderWidth: 1.5,
+                      borderColor: getPhaseColor('ovulation'),
+                      borderRadius: 15,
+                    },
+                    isSelected && { backgroundColor: selectionColor, borderRadius: 15 },
                   ]}
                 >
                   <Text
@@ -205,6 +210,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },

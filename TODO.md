@@ -171,7 +171,7 @@
 - [x] Grille mensuelle custom (ou `react-native-calendars`) — implémentation custom (`utils/calendarGrid.ts`), pas de dépendance ajoutée
 - [x] Navigation mois précédent / suivant
 - [x] Aujourd'hui cerclé en violet
-- [x] Bandes de couleur horizontales par semaine selon la phase (`GET /cycle/phases?from=&to=`) — fond de cellule teinté par phase (jours consécutifs de même phase → bande continue), pas d'agrégat par semaine
+- [x] Bandes de couleur horizontales par semaine selon la phase (`GET /cycle/phases?from=&to=`) — trait fin en bas de chaque cellule, coloré par phase (jours consécutifs de même phase → bande continue) ; le fond de cellule teinté envisagé initialement a été abandonné (confusion avec la couleur du calendrier des événements)
 - [x] Événements sous les jours (tronqués à ~12 chars)
 - [x] Icônes barre sup : 🔍 Recherche, 📥 Invitations, ⚙️ Paramètres — affichées, non câblées (écrans Recherche/Invitations pas encore construits, cf. Écrans 14/15)
 - [x] Bouton "Aujourd'hui" (bas)
@@ -182,7 +182,7 @@
 - [x] Bottom sheet avec `@gorhom/bottom-sheet`
 - [x] Titre, date, horaire, lieu, calendrier (couleur), notes
 - [x] Indicateur de phase : "Non concerné" OU `[phase] — [recommandation]` — texte aligné sur la maquette Figma ("Incompatible avec la phase du cycle" / "Non concerné avec la phase du cycle") plutôt que le gabarit `[phase] — [recommandation]`
-- [x] Bouton "Voir les suggestions" si phase défavorable + événement déplaçable — affiché mais non câblé (Écran 13 / RecommendationModule pas encore construits, prévus v0.4)
+- [x] Bouton "Voir les suggestions" si phase défavorable + événement déplaçable — remplacé par un bandeau de recommandation affiché directement (pas de bouton intermédiaire), avec "Garder cette date" / "Choisir un créneau" → ouvre un mini-calendrier (jours favorables en surbrillance, événements déjà prévus visibles, jours passés exclus) ; recouvre une bonne partie de l'Écran 13 (v0.4) en version simplifiée côté client, sans passer par `MoveSuggestion`/`RecommendationModule` — voir note sous Écran 13
 - [x] Bouton "Se désinscrire" pour événements importés — + Supprimer/Modifier pour les événements locaux (hors périmètre TODO initial mais nécessaire pour un CRUD complet ; réutilise `CreateEventModal` en mode édition)
 
 ### Frontend — Écran 15 — Recherche (bottom sheet)
@@ -220,6 +220,10 @@
 - [ ] `PATCH /invitations/:id` — répondre (accepted / declined / maybe)
 
 ### Frontend — Écran 13 — Suggestion de déplacement
+> Une version simplifiée existe déjà côté client (v0.3, Écran 12) : bandeau + mini-calendrier
+> avec jours favorables en surbrillance, sans persistance `MoveSuggestion`. Le travail restant
+> ici est surtout backend (génération/scoring réel des créneaux, endpoints dédiés) ; l'UI est à
+> adapter pour les consommer plutôt qu'à reconstruire entièrement.
 - [ ] Modal/bottom sheet depuis le détail événement
 - [ ] Description de la phase actuelle et pourquoi elle est défavorable
 - [ ] Liste des créneaux alternatifs (date, heure, phase, couleur)
@@ -267,7 +271,7 @@
   - [ ] CR-12 : Token expiré → 401 + refresh automatique
 
 ### Accessibilité (WCAG AA)
-- [ ] Vérifier ratio de contraste violet #6B3FA0 sur fond blanc (≥ 4.5:1)
+- [x] Vérifier ratio de contraste violet #6B3FA0 sur fond blanc (≥ 4.5:1) — 7.38:1, conforme (calcul luminance relative WCAG). Au passage, couleurs de phase vérifiées aussi (`utils/theme.ts`) : traits de phase 4.10–12.99:1 vs blanc (seuil 3:1 non-textuel), contour du jour suggéré 4.10:1
 - [ ] Ajouter `accessibilityLabel` sur tous les boutons et éléments interactifs
 - [ ] Vérifier tailles de zones tactiles ≥ 44×44 dp
 - [ ] Tester avec VoiceOver (iOS) et TalkBack (Android)
