@@ -4,7 +4,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { deleteEvent, type EventDto } from '../api/calendar';
 import type { Phase } from '../store/cycleStore';
 import { getErrorMessage } from '../utils/errors';
-import { isUnfavorablePhase, PHASE_LABELS } from '../utils/phaseRecommendation';
+import { CATEGORY_LABELS, isUnfavorablePhase, PHASE_LABELS } from '../utils/phaseRecommendation';
 import { colors } from '../utils/theme';
 
 interface Props {
@@ -44,7 +44,7 @@ export function EventDetailSheet({ event, phase, onClose, onEdit, onChooseSlot, 
   if (!event) return null;
 
   const isImported = event.calendar?.source && event.calendar.source !== 'local';
-  const isUnfavorable = event.isMovable && isUnfavorablePhase(phase);
+  const isUnfavorable = event.isMovable && isUnfavorablePhase(event.eventType, phase);
 
   const handleDelete = () => {
     Alert.alert(
@@ -95,7 +95,8 @@ export function EventDetailSheet({ event, phase, onClose, onEdit, onChooseSlot, 
                 <Text style={styles.bannerText}>
                   Nous vous recommandons de déplacer{' '}
                   <Text style={styles.bannerTextBold}>{event.title}</Text> : la phase{' '}
-                  {phase ? PHASE_LABELS[phase] : ''} n'est pas idéale pour ce type d'événement.
+                  {phase ? PHASE_LABELS[phase] : ''} n'est pas idéale pour un événement de type{' '}
+                  {CATEGORY_LABELS[event.eventType]}.
                 </Text>
                 <View style={styles.bannerActions}>
                   <Pressable

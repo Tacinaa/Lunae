@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { getEvents, type EventDto } from '../api/calendar';
+import { getEvents, type EventDto, type EventType } from '../api/calendar';
 import { getPhasesInRange } from '../api/cycle';
 import type { Phase, PhaseEntry } from '../store/cycleStore';
 import { MONTH_LABELS, WEEKDAY_LABELS, getMonthMatrix, isSameDay, toDateKey } from '../utils/calendarGrid';
-import { isFavorablePhase, isUnfavorablePhase } from '../utils/phaseRecommendation';
+import { isOptimalPhase, isUnfavorablePhase } from '../utils/phaseRecommendation';
 import { colors, getPhaseColor } from '../utils/theme';
 
 interface Props {
@@ -16,6 +16,7 @@ interface Props {
   referenceDate: Date;
   selectionColor: string;
   isMovable: boolean;
+  eventType: EventType;
   excludeEventId?: string;
   onChange: (date: Date) => void;
 }
@@ -34,6 +35,7 @@ export function EventDatePicker({
   referenceDate,
   selectionColor,
   isMovable,
+  eventType,
   excludeEventId,
   onChange,
 }: Props) {
@@ -89,7 +91,7 @@ export function EventDatePicker({
   }, [events, excludeEventId]);
 
   const referencePhase = phaseByDate.get(toDateKey(referenceDate)) ?? null;
-  const showSuggestions = isMovable && isUnfavorablePhase(referencePhase);
+  const showSuggestions = isMovable && isUnfavorablePhase(eventType, referencePhase);
 
   const goToPreviousMonth = () => {
     const prev = new Date(Date.UTC(visibleYear, visibleMonth - 1, 1));
@@ -143,7 +145,8 @@ export function EventDatePicker({
             const isSelected = isSameDay(day, value);
             const isPast = day < today;
             const phase = phaseByDate.get(dateKey);
-            const isSuggested = showSuggestions && !isSelected && !isPast && isFavorablePhase(phase);
+            const isSuggested =
+              showSuggestions && !isSelected && !isPast && isOptimalPhase(eventType, phase);
             const dayEvents = eventsByDate.get(dateKey) ?? [];
 
             return (
@@ -155,18 +158,24 @@ export function EventDatePicker({
                 accessibilityRole="button"
                 accessibilityLabel={day.toLocaleDateString('fr-FR')}
               >
-                <View
-                  style={[
-                    styles.dayCircle,
-                    isSuggested && {
-                      backgroundColor: colors.background,
-                      borderWidth: 1.5,
-                      borderColor: getPhaseColor('ovulation'),
-                      borderRadius: 15,
-                    },
-                    isSelected && { backgroundColor: selectionColor, borderRadius: 15 },
-                  ]}
-                >
+                <View style={styles.dayCircleWrap}>
+                  {/* Fond du rond dans une vue séparée, en position absolute derrière le
+                   * texte : sur Android, `overflow: hidden` + `borderRadius` appliqués à la
+                   * même vue que le texte peut faire disparaître ce dernier (bug de
+                   * compositing). Le texte reste dans une vue non-clippée, toujours peint
+                   * par-dessus. */}
+                  <View
+                    style={[
+                      styles.dayCircleBg,
+                      isSuggested &&
+                        phase && {
+                          backgroundColor: colors.background,
+                          borderWidth: 1.5,
+                          borderColor: getPhaseColor(phase),
+                        },
+                      isSelected && { backgroundColor: selectionColor },
+                    ]}
+                  />
                   <Text
                     style={[
                       styles.dayNumber,
@@ -206,13 +215,18 @@ const styles = StyleSheet.create({
   weekdayLabel: { flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '600', color: colors.textMuted },
   weekRow: { flexDirection: 'row' },
   dayCell: { flex: 1, alignItems: 'center', paddingVertical: 2 },
-  dayCircle: {
+  dayCircleWrap: {
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayCircleBg: {
+    position: 'absolute',
     width: 30,
     height: 30,
     borderRadius: 15,
     overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   dayNumber: { fontSize: 12, color: colors.text },
   dayNumberOutside: { color: colors.textMuted, opacity: 0.4 },

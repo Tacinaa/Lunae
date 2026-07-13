@@ -16,7 +16,16 @@ export interface CreateCalendarPayload {
   color?: string;
 }
 
-export type EventType = 'meeting' | 'class' | 'sport' | 'personal' | 'other';
+export type EventType =
+  | 'meeting'
+  | 'class'
+  | 'sport_intense'
+  | 'sport_leger'
+  | 'focus_administratif'
+  | 'creation_planification'
+  | 'social_enjeu'
+  | 'personal'
+  | 'other';
 
 export interface EventDto {
   id: string;

@@ -199,20 +199,32 @@
 ## v0.4 — Suggestions + Invitations + Tests (J+9)
 
 ### Backend — Module Recommendation
-- [ ] Générer `RecommendationModule`, `RecommendationService`, `RecommendationController`
-- [ ] `GET /suggestions` — suggestions en attente (status: 'pending')
-- [ ] `POST /suggestions/:id/accept` — appliquer le déplacement (`PATCH /events/:id` interne)
-- [ ] `POST /suggestions/:id/dismiss` — ignorer la suggestion
-- [ ] Implémenter la logique de génération des suggestions :
-  - [ ] `shouldSuggestMove(event, phase)` → boolean
-  - [ ] `generateSuggestions(event, phaseCalendar, existingEvents)` → créneaux triés par score
-  - [ ] Déclencher la génération au moment de la création/modification d'un événement
-- [ ] **Tests unitaires Recommendations** :
-  - [ ] `shouldSuggestMove()` — événement en menstruation + isMovable=true → true
-  - [ ] `shouldSuggestMove()` — isMovable=false → false
-  - [ ] `shouldSuggestMove()` — événement en ovulation → false
-  - [ ] `generateSuggestions()` — créneaux triés par score décroissant (ovulation=3, folliculaire=2, lutéale=1)
-  - [ ] `generateSuggestions()` — exclut les créneaux déjà occupés
+> Le scoring n'est pas une table unique "phase → score" appliquée à tous les événements : chaque
+> `EventType` a sa propre table de score par phase (`recommendation-algorithm.service.ts`), basée
+> sur des repères généraux (non cliniques) — ex. `sport_intense` optimal en ovulation,
+> `focus_administratif` optimal en lutéale. Les catégories neutres (`meeting`/`class`/`personal`/
+> `other`) retombent sur la table générique du CLAUDE.md. `EventType` a été étendu en conséquence
+> (remplace `sport` par `sport_intense`/`sport_leger`, ajoute `focus_administratif`/
+> `creation_planification`/`social_enjeu`) — migration `event_type_categories`. Un picker de
+> catégorie (chips) a été ajouté à `CreateEventModal` (hors périmètre initial de l'Écran 11/12,
+> nécessaire pour que la catégorisation ait un effet). Personnalisation par symptômes déclarés :
+> volontairement hors scope MVP (cf. Backlog), le signal accept/dismiss n'étant pas fiable comme
+> proxy (un refus peut être logistique, pas une mauvaise recommandation).
+- [x] Générer `RecommendationModule`, `RecommendationService`, `RecommendationController`
+- [x] `GET /suggestions` — suggestions en attente (status: 'pending')
+- [x] `POST /suggestions/:id/accept` — appliquer le déplacement (`PATCH /events/:id` interne)
+- [x] `POST /suggestions/:id/dismiss` — ignorer la suggestion
+- [x] Implémenter la logique de génération des suggestions :
+  - [x] `shouldSuggestMove(event, phase)` → boolean — compare le score de la catégorie à la phase actuelle au score max de cette catégorie (pas une liste de phases universelle)
+  - [x] `generateSuggestions(event, phaseCalendar, existingEvents)` → créneaux triés par score décroissant
+  - [x] Déclencher la génération au moment de la création/modification d'un événement (`EventService.create`/`update`, synchrone)
+- [x] **Tests unitaires Recommendations** (`recommendation-algorithm.service.spec.ts`, 14 tests) :
+  - [x] `shouldSuggestMove()` — événement en menstruation + isMovable=true → true
+  - [x] `shouldSuggestMove()` — isMovable=false → false
+  - [x] `shouldSuggestMove()` — événement en ovulation déjà optimal pour sa catégorie → false
+  - [x] `shouldSuggestMove()` — catégorie dont l'optimum n'est pas l'ovulation (ex. `focus_administratif`) → true même en ovulation
+  - [x] `generateSuggestions()` — créneaux triés par score décroissant
+  - [x] `generateSuggestions()` — exclut les créneaux déjà occupés, les jours passés et le jour d'origine
 
 ### Backend — Module Invitation
 - [ ] Générer `InvitationModule`, `InvitationService`, `InvitationController`
@@ -221,9 +233,16 @@
 
 ### Frontend — Écran 13 — Suggestion de déplacement
 > Une version simplifiée existe déjà côté client (v0.3, Écran 12) : bandeau + mini-calendrier
-> avec jours favorables en surbrillance, sans persistance `MoveSuggestion`. Le travail restant
-> ici est surtout backend (génération/scoring réel des créneaux, endpoints dédiés) ; l'UI est à
-> adapter pour les consommer plutôt qu'à reconstruire entièrement.
+> avec jours favorables en surbrillance, sans persistance `MoveSuggestion`. Le backend
+> (génération/scoring réel des créneaux, endpoints `/suggestions`) est fait (v0.4), mais l'UI
+> existante ne les consomme toujours pas : le mini-calendrier calcule sa propre surbrillance
+> côté client (table de score dupliquée dans `phaseRecommendation.ts`, uniquement le score max
+> par catégorie — option retenue pour éviter l'ambiguïté visuelle entre deux créneaux "bons"
+> mais de score différent) et la sélection d'un créneau passe par `PATCH /events/:id` direct,
+> pas par `POST /suggestions/:id/accept`. Les `MoveSuggestion` sont donc générées et persistées
+> en base à chaque création/modification d'événement, mais pas encore affichées ni utilisées
+> par l'UI — le travail restant est de brancher l'écran dédié (liste) sur ces endpoints plutôt
+> que de reconstruire la logique de scoring.
 - [ ] Modal/bottom sheet depuis le détail événement
 - [ ] Description de la phase actuelle et pourquoi elle est défavorable
 - [ ] Liste des créneaux alternatifs (date, heure, phase, couleur)

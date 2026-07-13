@@ -14,8 +14,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { createEvent, updateEvent, type CalendarDto, type EventDto } from '../api/calendar';
+import { createEvent, updateEvent, type CalendarDto, type EventDto, type EventType } from '../api/calendar';
 import { getErrorMessage } from '../utils/errors';
+import { CATEGORY_OPTIONS } from '../utils/phaseRecommendation';
 import { colors } from '../utils/theme';
 import { EventDatePicker } from './EventDatePicker';
 
@@ -59,6 +60,7 @@ export function CreateEventModal({
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
   const [calendarId, setCalendarId] = useState<string | undefined>(calendars[0]?.id);
+  const [eventType, setEventType] = useState<EventType>('other');
   const [date, setDate] = useState(defaultDate);
   const [referenceDate, setReferenceDate] = useState(defaultDate);
   const [startTime, setStartTime] = useState(() => withHours(defaultDate, 9));
@@ -76,6 +78,7 @@ export function CreateEventModal({
       setLocation(event.location ?? '');
       setNotes(event.notes ?? '');
       setCalendarId(event.calendarId);
+      setEventType(event.eventType);
       setDate(new Date(event.startAt));
       setReferenceDate(new Date(event.startAt));
       setStartTime(new Date(event.startAt));
@@ -85,6 +88,7 @@ export function CreateEventModal({
       setLocation('');
       setNotes('');
       setCalendarId(calendars[0]?.id);
+      setEventType('other');
       setDate(defaultDate);
       setReferenceDate(defaultDate);
       setStartTime(withHours(defaultDate, 9));
@@ -124,6 +128,7 @@ export function CreateEventModal({
         endAt: endAt.toISOString(),
         location: location.trim() || undefined,
         notes: notes.trim() || undefined,
+        eventType,
       };
       const saved = event ? await updateEvent(event.id, payload) : await createEvent(payload);
       onSaved(saved);
@@ -154,6 +159,7 @@ export function CreateEventModal({
           referenceDate={referenceDate}
           selectionColor={resolvedCalendarColor}
           isMovable={isMovable}
+          eventType={eventType}
           excludeEventId={event?.id}
           onChange={setDate}
         />
@@ -203,6 +209,29 @@ export function CreateEventModal({
         onChangeText={setTitle}
         accessibilityLabel="Titre de l'événement"
       />
+
+      <View style={styles.categorySection}>
+        <Text style={styles.sectionLabel}>Catégorie</Text>
+        <View style={styles.categoryChipsRow}>
+          {CATEGORY_OPTIONS.map((option) => {
+            const selected = eventType === option.value;
+            return (
+              <Pressable
+                key={option.value}
+                style={[styles.categoryChip, selected && styles.categoryChipSelected]}
+                onPress={() => setEventType(option.value)}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`Catégorie ${option.label}`}
+              >
+                <Text style={[styles.categoryChipText, selected && styles.categoryChipTextSelected]}>
+                  {option.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
 
       <View style={styles.calendarSection}>
         {calendars.length === 0 ? (
@@ -375,6 +404,20 @@ const styles = StyleSheet.create({
   dateToggleValueRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dateToggleValue: { fontSize: 14, color: colors.text },
   dateToggleChevron: { fontSize: 10, color: colors.textMuted },
+  categorySection: { marginBottom: 16 },
+  categoryChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  categoryChip: {
+    minHeight: 36,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryChipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  categoryChipText: { fontSize: 13, color: colors.text, fontWeight: '600' },
+  categoryChipTextSelected: { color: '#FFFFFF' },
   calendarSection: { marginBottom: 16 },
   calendarDot: { width: 10, height: 10, borderRadius: 5 },
   calendarList: {

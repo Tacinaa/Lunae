@@ -38,7 +38,16 @@ interface DemoEvent {
   dayOffset: number;
   startHour: number;
   durationHours: number;
-  eventType: 'meeting' | 'class' | 'sport' | 'personal' | 'other';
+  eventType:
+    | 'meeting'
+    | 'class'
+    | 'sport_intense'
+    | 'sport_leger'
+    | 'focus_administratif'
+    | 'creation_planification'
+    | 'social_enjeu'
+    | 'personal'
+    | 'other';
   isMovable?: boolean;
   isAllDay?: boolean;
 }
@@ -48,21 +57,21 @@ const DEMO_EVENTS: DemoEvent[] = [
   { calendar: 'personal', title: 'Rangement appartement', dayOffset: -5, startHour: 10, durationHours: 2, eventType: 'other' },
   { calendar: 'work', title: 'Réunion équipe produit hebdomadaire', dayOffset: -2, startHour: 9, durationHours: 1, eventType: 'meeting' },
   { calendar: 'personal', title: 'Rendez-vous dentiste', dayOffset: -1, startHour: 14, durationHours: 1, eventType: 'other' },
-  { calendar: 'sport', title: 'Cours de boxe', dayOffset: 0, startHour: 18, durationHours: 1, eventType: 'sport', isMovable: true },
+  { calendar: 'sport', title: 'Cours de boxe', dayOffset: 0, startHour: 18, durationHours: 1, eventType: 'sport_intense', isMovable: true },
   { calendar: 'personal', title: 'Anniversaire de Camille', dayOffset: 0, startHour: 20, durationHours: 2, eventType: 'personal' },
   { calendar: 'work', title: 'Point 1:1 avec manager', dayOffset: 1, startHour: 11, durationHours: 1, eventType: 'meeting' },
-  { calendar: 'work', title: 'Présentation client Atos', dayOffset: 2, startHour: 15, durationHours: 1, eventType: 'meeting', isMovable: false },
-  { calendar: 'sport', title: 'Séance de yoga du matin', dayOffset: 3, startHour: 7, durationHours: 1, eventType: 'sport' },
+  { calendar: 'work', title: 'Présentation client Atos', dayOffset: 2, startHour: 15, durationHours: 1, eventType: 'social_enjeu', isMovable: false },
+  { calendar: 'sport', title: 'Séance de yoga du matin', dayOffset: 3, startHour: 7, durationHours: 1, eventType: 'sport_leger' },
   { calendar: 'personal', title: 'Déjeuner avec Sarah', dayOffset: 3, startHour: 12, durationHours: 1, eventType: 'personal' },
   { calendar: 'work', title: 'Sprint planning', dayOffset: 4, startHour: 10, durationHours: 1, eventType: 'meeting' },
-  { calendar: 'sport', title: 'Course à pied 10km', dayOffset: 5, startHour: 8, durationHours: 1, eventType: 'sport' },
+  { calendar: 'sport', title: 'Course à pied 10km', dayOffset: 5, startHour: 8, durationHours: 1, eventType: 'sport_intense' },
   { calendar: 'personal', title: 'Cinéma avec Julie et les copines', dayOffset: 6, startHour: 20, durationHours: 2, eventType: 'personal' },
-  { calendar: 'work', title: 'Revue de code trimestrielle', dayOffset: 7, startHour: 14, durationHours: 1, eventType: 'meeting' },
-  { calendar: 'work', title: 'Formation React Native', dayOffset: 8, startHour: 9, durationHours: 3, eventType: 'class' },
-  { calendar: 'sport', title: 'Cours de pilates', dayOffset: 9, startHour: 18, durationHours: 1, eventType: 'sport' },
+  { calendar: 'work', title: 'Revue de code trimestrielle', dayOffset: 7, startHour: 14, durationHours: 1, eventType: 'focus_administratif' },
+  { calendar: 'work', title: 'Formation React Native', dayOffset: 8, startHour: 9, durationHours: 3, eventType: 'creation_planification' },
+  { calendar: 'sport', title: 'Cours de pilates', dayOffset: 9, startHour: 18, durationHours: 1, eventType: 'sport_leger' },
   { calendar: 'personal', title: 'Weekend chez mes parents', dayOffset: 10, startHour: 8, durationHours: 12, eventType: 'personal', isAllDay: true },
   { calendar: 'work', title: 'Entretien annuel RH', dayOffset: 12, startHour: 10, durationHours: 1, eventType: 'meeting' },
-  { calendar: 'sport', title: 'Match de tennis', dayOffset: 13, startHour: 17, durationHours: 1, eventType: 'sport' },
+  { calendar: 'sport', title: 'Match de tennis', dayOffset: 13, startHour: 17, durationHours: 1, eventType: 'sport_intense' },
 ];
 
 async function main() {

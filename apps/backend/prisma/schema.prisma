@@ -24,7 +24,11 @@ enum CalendarSource {
 enum EventType {
   meeting
   class
-  sport
+  sport_intense
+  sport_leger
+  focus_administratif
+  creation_planification
+  social_enjeu
   personal
   other
 }

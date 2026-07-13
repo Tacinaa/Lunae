@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { RecommendationService } from '../recommendation/recommendation.service.js';
 import type { CreateEventDto } from './dto/create-event.dto.js';
 import type { UpdateEventDto } from './dto/update-event.dto.js';
 
 @Injectable()
 export class EventService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private recommendations: RecommendationService,
+  ) {}
 
   async findInRange(userId: string, from: Date, to: Date) {
     const events = await this.prisma.event.findMany({
@@ -39,13 +43,17 @@ export class EventService {
     return event;
   }
 
-  create(userId: string, dto: CreateEventDto) {
-    return this.prisma.event.create({ data: { userId, ...dto } });
+  async create(userId: string, dto: CreateEventDto) {
+    const event = await this.prisma.event.create({ data: { userId, ...dto } });
+    await this.recommendations.generateForEvent(userId, event);
+    return event;
   }
 
   async update(userId: string, id: string, dto: UpdateEventDto) {
     await this.findOne(userId, id);
-    return this.prisma.event.update({ where: { id }, data: dto });
+    const event = await this.prisma.event.update({ where: { id }, data: dto });
+    await this.recommendations.generateForEvent(userId, event);
+    return event;
   }
 
   async remove(userId: string, id: string) {
