@@ -45,6 +45,8 @@ export interface CreateEventPayload {
   eventType?: EventType;
 }
 
+export type UpdateEventPayload = Partial<CreateEventPayload>;
+
 export async function getCalendars(): Promise<CalendarDto[]> {
   const { data } = await apiClient.get<CalendarDto[]>('/calendars');
   return data;
@@ -63,4 +65,13 @@ export async function getEvents(from: string, to: string): Promise<EventDto[]> {
 export async function createEvent(payload: CreateEventPayload): Promise<EventDto> {
   const { data } = await apiClient.post<EventDto>('/events', payload);
   return data;
+}
+
+export async function updateEvent(id: string, payload: UpdateEventPayload): Promise<EventDto> {
+  const { data } = await apiClient.patch<EventDto>(`/events/${id}`, payload);
+  return data;
+}
+
+export async function deleteEvent(id: string): Promise<void> {
+  await apiClient.delete(`/events/${id}`);
 }

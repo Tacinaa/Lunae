@@ -5,31 +5,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getCalendars, getEvents, type CalendarDto, type EventDto } from '../../api/calendar';
 import { getPhasesInRange } from '../../api/cycle';
 import { CreateEventModal } from '../../components/CreateEventModal';
+import { EventDetailSheet } from '../../components/EventDetailSheet';
 import type { AppStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/authStore';
 import type { Phase, PhaseEntry } from '../../store/cycleStore';
-import { getMonthMatrix, isSameDay, toDateKey } from '../../utils/calendarGrid';
+import {
+  MONTH_LABELS,
+  WEEKDAY_LABELS,
+  getMonthMatrix,
+  isSameDay,
+  toDateKey,
+} from '../../utils/calendarGrid';
 import { getErrorMessage } from '../../utils/errors';
 import { resetOnboardingSeen } from '../../utils/onboarding';
 import { colors, getPhaseColor, hexToRgba } from '../../utils/theme';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'MainCalendar'>;
 
-const WEEKDAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
-const MONTH_LABELS = [
-  'Janvier',
-  'Février',
-  'Mars',
-  'Avril',
-  'Mai',
-  'Juin',
-  'Juillet',
-  'Août',
-  'Septembre',
-  'Octobre',
-  'Novembre',
-  'Décembre',
-];
 const TITLE_MAX_CHARS = 12;
 
 function truncate(text: string, max: number): string {
@@ -48,7 +40,10 @@ export function MainCalendarScreen(_props: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCalendarFilter, setShowCalendarFilter] = useState(false);
-  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<EventDto | null>(null);
+  const [editFocusDate, setEditFocusDate] = useState(false);
+  const [detailEvent, setDetailEvent] = useState<EventDto | null>(null);
   const logout = useAuthStore((state) => state.logout);
 
   const weeks = useMemo(() => getMonthMatrix(visibleYear, visibleMonth), [visibleYear, visibleMonth]);
@@ -133,9 +128,18 @@ export function MainCalendarScreen(_props: Props) {
     });
   };
 
-  const handleEventCreated = (event: EventDto) => {
-    setEvents((prev) => [...prev, event]);
-    setCreateModalVisible(false);
+  const handleEventSaved = (event: EventDto) => {
+    setEvents((prev) => {
+      const exists = prev.some((e) => e.id === event.id);
+      return exists ? prev.map((e) => (e.id === event.id ? event : e)) : [...prev, event];
+    });
+    setShowCreateForm(false);
+    setEditingEvent(null);
+  };
+
+  const handleEventDeleted = (eventId: string) => {
+    setEvents((prev) => prev.filter((e) => e.id !== eventId));
+    setDetailEvent(null);
   };
 
   const handleResetForTesting = () => {
@@ -219,14 +223,17 @@ export function MainCalendarScreen(_props: Props) {
                   {dayEvents.slice(0, 2).map((event) => {
                     const calendarColor = event.calendar?.color ?? colors.primary;
                     return (
-                      <View
+                      <Pressable
                         key={event.id}
+                        onPress={() => setDetailEvent(event)}
                         style={[styles.eventPill, { backgroundColor: hexToRgba(calendarColor, 0.22) }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={event.title}
                       >
                         <Text numberOfLines={1} style={[styles.eventPillText, { color: calendarColor }]}>
                           {truncate(event.title, TITLE_MAX_CHARS)}
                         </Text>
-                      </View>
+                      </Pressable>
                     );
                   })}
                   {phase && (
@@ -294,7 +301,7 @@ export function MainCalendarScreen(_props: Props) {
 
       <Pressable
         style={styles.fab}
-        onPress={() => setCreateModalVisible(true)}
+        onPress={() => setShowCreateForm(true)}
         accessibilityRole="button"
         accessibilityLabel="Créer un événement"
       >
@@ -302,11 +309,34 @@ export function MainCalendarScreen(_props: Props) {
       </Pressable>
 
       <CreateEventModal
-        visible={createModalVisible}
+        visible={showCreateForm || editingEvent !== null}
         calendars={calendars}
         defaultDate={today}
-        onClose={() => setCreateModalVisible(false)}
-        onCreated={handleEventCreated}
+        event={editingEvent}
+        focusDate={editFocusDate}
+        onClose={() => {
+          setShowCreateForm(false);
+          setEditingEvent(null);
+          setEditFocusDate(false);
+        }}
+        onSaved={handleEventSaved}
+      />
+
+      <EventDetailSheet
+        event={detailEvent}
+        phase={detailEvent ? (phaseByDate.get(toDateKey(new Date(detailEvent.startAt))) ?? null) : null}
+        onClose={() => setDetailEvent(null)}
+        onEdit={(event) => {
+          setDetailEvent(null);
+          setEditFocusDate(false);
+          setEditingEvent(event);
+        }}
+        onChooseSlot={(event) => {
+          setDetailEvent(null);
+          setEditFocusDate(true);
+          setEditingEvent(event);
+        }}
+        onDeleted={handleEventDeleted}
       />
     </SafeAreaView>
   );

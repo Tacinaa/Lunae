@@ -1,30 +1,35 @@
 import DateTimePicker, {
   type DateTimePickerChangeEvent,
 } from '@react-native-community/datetimepicker';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { createEvent, type CalendarDto, type EventDto } from '../api/calendar';
+import { createEvent, updateEvent, type CalendarDto, type EventDto } from '../api/calendar';
 import { getErrorMessage } from '../utils/errors';
 import { colors } from '../utils/theme';
+import { EventDatePicker } from './EventDatePicker';
 
 interface Props {
   visible: boolean;
   calendars: CalendarDto[];
   defaultDate: Date;
+  event?: EventDto | null;
+  /** Ouvre directement le calendrier de sélection de date (arrivée via "Choisir un créneau"). */
+  focusDate?: boolean;
   onClose: () => void;
-  onCreated: (event: EventDto) => void;
+  onSaved: (event: EventDto) => void;
 }
 
-type ActivePicker = 'date' | 'start' | 'end' | null;
+type ActivePicker = 'start' | 'end' | null;
 
 function combineDateAndTime(date: Date, time: Date): Date {
   const combined = new Date(date);
@@ -38,28 +43,71 @@ function withHours(date: Date, hours: number): Date {
   return result;
 }
 
-export function CreateEventModal({ visible, calendars, defaultDate, onClose, onCreated }: Props) {
+export function CreateEventModal({
+  visible,
+  calendars,
+  defaultDate,
+  event,
+  focusDate,
+  onClose,
+  onSaved,
+}: Props) {
+  const isEditing = Boolean(event);
+
   const [title, setTitle] = useState('');
+  const [location, setLocation] = useState('');
+  const [notes, setNotes] = useState('');
   const [calendarId, setCalendarId] = useState<string | undefined>(calendars[0]?.id);
   const [date, setDate] = useState(defaultDate);
+  const [referenceDate, setReferenceDate] = useState(defaultDate);
   const [startTime, setStartTime] = useState(() => withHours(defaultDate, 9));
   const [endTime, setEndTime] = useState(() => withHours(defaultDate, 10));
   const [activePicker, setActivePicker] = useState<ActivePicker>(null);
+  const [dateExpanded, setDateExpanded] = useState(false);
+  const [calendarExpanded, setCalendarExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!visible) return;
+    if (event) {
+      setTitle(event.title);
+      setLocation(event.location ?? '');
+      setNotes(event.notes ?? '');
+      setCalendarId(event.calendarId);
+      setDate(new Date(event.startAt));
+      setReferenceDate(new Date(event.startAt));
+      setStartTime(new Date(event.startAt));
+      setEndTime(new Date(event.endAt));
+    } else {
+      setTitle('');
+      setLocation('');
+      setNotes('');
+      setCalendarId(calendars[0]?.id);
+      setDate(defaultDate);
+      setReferenceDate(defaultDate);
+      setStartTime(withHours(defaultDate, 9));
+      setEndTime(withHours(defaultDate, 10));
+    }
+    setDateExpanded(Boolean(focusDate));
+    setCalendarExpanded(false);
+    setError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, event, focusDate]);
+
   const resolvedCalendarId = calendarId ?? calendars[0]?.id;
+  const resolvedCalendarColor =
+    calendars.find((cal) => cal.id === resolvedCalendarId)?.color ?? colors.primary;
+  const isMovable = event ? event.isMovable : true;
   const canSubmit = Boolean(title.trim()) && Boolean(resolvedCalendarId) && !isSubmitting;
 
   const handlePickerChange = (_event: DateTimePickerChangeEvent, selected: Date) => {
-    if (activePicker === 'date') setDate(selected);
-    else if (activePicker === 'start') setStartTime(selected);
+    if (activePicker === 'start') setStartTime(selected);
     else if (activePicker === 'end') setEndTime(selected);
     setActivePicker(null);
   };
 
-  const pickerValue =
-    activePicker === 'date' ? date : activePicker === 'start' ? startTime : endTime;
+  const pickerValue = activePicker === 'start' ? startTime : endTime;
 
   const handleSubmit = async () => {
     if (!resolvedCalendarId || !title.trim()) return;
@@ -68,14 +116,16 @@ export function CreateEventModal({ visible, calendars, defaultDate, onClose, onC
     try {
       const startAt = combineDateAndTime(date, startTime);
       const endAt = combineDateAndTime(date, endTime);
-      const event = await createEvent({
+      const payload = {
         calendarId: resolvedCalendarId,
         title: title.trim(),
         startAt: startAt.toISOString(),
         endAt: endAt.toISOString(),
-      });
-      setTitle('');
-      onCreated(event);
+        location: location.trim() || undefined,
+        notes: notes.trim() || undefined,
+      };
+      const saved = event ? await updateEvent(event.id, payload) : await createEvent(payload);
+      onSaved(saved);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -83,82 +133,171 @@ export function CreateEventModal({ visible, calendars, defaultDate, onClose, onC
     }
   };
 
+  const dateSection = (
+    <View style={styles.dateSection}>
+      <Pressable
+        style={styles.dateToggleRow}
+        onPress={() => setDateExpanded((v) => !v)}
+        accessibilityRole="button"
+        accessibilityLabel="Date de l'événement"
+      >
+        <Text style={styles.sectionLabel}>Date</Text>
+        <View style={styles.dateToggleValueRow}>
+          <Text style={styles.dateToggleValue}>{date.toLocaleDateString('fr-FR')}</Text>
+          <Text style={styles.dateToggleChevron}>{dateExpanded ? '▲' : '▼'}</Text>
+        </View>
+      </Pressable>
+      {dateExpanded && (
+        <EventDatePicker
+          value={date}
+          referenceDate={referenceDate}
+          selectionColor={resolvedCalendarColor}
+          isMovable={isMovable}
+          excludeEventId={event?.id}
+          onChange={setDate}
+        />
+      )}
+
+      <View style={styles.fieldRow}>
+        <View style={styles.fieldColumn}>
+          <Text style={styles.timeLabel}>Début</Text>
+          <Pressable
+            style={styles.fieldButton}
+            onPress={() => setActivePicker('start')}
+            accessibilityRole="button"
+            accessibilityLabel="Heure de début"
+          >
+            <Text style={styles.fieldButtonText}>
+              {startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </Pressable>
+        </View>
+        <View style={styles.fieldColumn}>
+          <Text style={styles.timeLabel}>Fin</Text>
+          <Pressable
+            style={styles.fieldButton}
+            onPress={() => setActivePicker('end')}
+            accessibilityRole="button"
+            accessibilityLabel="Heure de fin"
+          >
+            <Text style={styles.fieldButtonText}>
+              {endTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+
+  const resolvedCalendarName =
+    calendars.find((cal) => cal.id === resolvedCalendarId)?.name ?? 'Aucun calendrier';
+
+  const titleAndCalendarSection = (
+    <>
+      <TextInput
+        style={styles.input}
+        placeholder="Titre de l'événement"
+        placeholderTextColor={colors.textMuted}
+        value={title}
+        onChangeText={setTitle}
+        accessibilityLabel="Titre de l'événement"
+      />
+
+      <View style={styles.calendarSection}>
+        {calendars.length === 0 ? (
+          <Text style={styles.hint}>Aucun calendrier disponible.</Text>
+        ) : (
+          <>
+            <Pressable
+              style={styles.dateToggleRow}
+              onPress={() => setCalendarExpanded((v) => !v)}
+              accessibilityRole="button"
+              accessibilityLabel="Calendrier"
+            >
+              <Text style={styles.sectionLabel}>Calendrier</Text>
+              <View style={styles.dateToggleValueRow}>
+                <View style={[styles.calendarDot, { backgroundColor: resolvedCalendarColor }]} />
+                <Text style={styles.dateToggleValue}>{resolvedCalendarName}</Text>
+                <Text style={styles.dateToggleChevron}>{calendarExpanded ? '▲' : '▼'}</Text>
+              </View>
+            </Pressable>
+            {calendarExpanded && (
+              <View style={styles.calendarList}>
+                {calendars.map((cal, index) => (
+                  <Pressable
+                    key={cal.id}
+                    onPress={() => {
+                      setCalendarId(cal.id);
+                      setCalendarExpanded(false);
+                    }}
+                    style={[styles.calendarListRow, index > 0 && styles.calendarListRowBorder]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Calendrier ${cal.name}`}
+                  >
+                    <View style={[styles.calendarDot, { backgroundColor: cal.color }]} />
+                    <Text style={styles.calendarListLabel}>{cal.name}</Text>
+                    {resolvedCalendarId === cal.id && <Text style={styles.calendarListCheck}>✓</Text>}
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </>
+        )}
+      </View>
+    </>
+  );
+
+  const locationAndNotesSection = (
+    <>
+      <TextInput
+        style={styles.input}
+        placeholder="Lieu (optionnel)"
+        placeholderTextColor={colors.textMuted}
+        value={location}
+        onChangeText={setLocation}
+        accessibilityLabel="Lieu de l'événement"
+      />
+
+      <TextInput
+        style={[styles.input, styles.notesInput]}
+        placeholder="Notes (optionnel)"
+        placeholderTextColor={colors.textMuted}
+        value={notes}
+        onChangeText={setNotes}
+        multiline
+        accessibilityLabel="Notes de l'événement"
+      />
+    </>
+  );
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View style={styles.sheet}>
-          <Text style={styles.title}>Nouvel événement</Text>
+        <ScrollView
+          style={styles.sheet}
+          contentContainerStyle={styles.sheetContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.title}>{isEditing ? "Modifier l'événement" : 'Nouvel événement'}</Text>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Titre de l'événement"
-            placeholderTextColor={colors.textMuted}
-            value={title}
-            onChangeText={setTitle}
-            accessibilityLabel="Titre de l'événement"
-          />
-
-          {calendars.length === 0 ? (
-            <Text style={styles.hint}>Aucun calendrier disponible.</Text>
+          {focusDate ? (
+            <>
+              {dateSection}
+              {titleAndCalendarSection}
+              {locationAndNotesSection}
+            </>
           ) : (
-            <View style={styles.chipRow}>
-              {calendars.map((cal) => (
-                <Pressable
-                  key={cal.id}
-                  onPress={() => setCalendarId(cal.id)}
-                  style={[
-                    styles.chip,
-                    { borderColor: cal.color },
-                    resolvedCalendarId === cal.id && { backgroundColor: cal.color },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Calendrier ${cal.name}`}
-                >
-                  <Text
-                    style={[styles.chipText, resolvedCalendarId === cal.id && styles.chipTextActive]}
-                  >
-                    {cal.name}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            <>
+              {titleAndCalendarSection}
+              {dateSection}
+              {locationAndNotesSection}
+            </>
           )}
-
-          <View style={styles.fieldRow}>
-            <Pressable
-              style={styles.fieldButton}
-              onPress={() => setActivePicker('date')}
-              accessibilityRole="button"
-              accessibilityLabel="Date de l'événement"
-            >
-              <Text style={styles.fieldButtonText}>{date.toLocaleDateString('fr-FR')}</Text>
-            </Pressable>
-            <Pressable
-              style={styles.fieldButton}
-              onPress={() => setActivePicker('start')}
-              accessibilityRole="button"
-              accessibilityLabel="Heure de début"
-            >
-              <Text style={styles.fieldButtonText}>
-                {startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-              </Text>
-            </Pressable>
-            <Pressable
-              style={styles.fieldButton}
-              onPress={() => setActivePicker('end')}
-              accessibilityRole="button"
-              accessibilityLabel="Heure de fin"
-            >
-              <Text style={styles.fieldButtonText}>
-                {endTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-              </Text>
-            </Pressable>
-          </View>
 
           {activePicker && (
             <DateTimePicker
               value={pickerValue}
-              mode={activePicker === 'date' ? 'date' : 'time'}
+              mode="time"
               display={Platform.OS === 'ios' ? 'spinner' : 'default'}
               onValueChange={handlePickerChange}
               onDismiss={() => setActivePicker(null)}
@@ -181,16 +320,16 @@ export function CreateEventModal({ visible, calendars, defaultDate, onClose, onC
               onPress={() => void handleSubmit()}
               disabled={!canSubmit}
               accessibilityRole="button"
-              accessibilityLabel="Créer l'événement"
+              accessibilityLabel={isEditing ? "Enregistrer l'événement" : "Créer l'événement"}
             >
               {isSubmitting ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.submitButtonText}>Créer</Text>
+                <Text style={styles.submitButtonText}>{isEditing ? 'Enregistrer' : 'Créer'}</Text>
               )}
             </Pressable>
           </View>
-        </View>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -199,11 +338,12 @@ export function CreateEventModal({ visible, calendars, defaultDate, onClose, onC
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   sheet: {
+    maxHeight: '85%',
     backgroundColor: colors.background,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 24,
   },
+  sheetContent: { padding: 24 },
   title: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 16 },
   input: {
     minHeight: 44,
@@ -215,18 +355,45 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 16,
   },
+  notesInput: { minHeight: 72, paddingTop: 12, textAlignVertical: 'top' },
   hint: { fontSize: 13, color: colors.textMuted, marginBottom: 16 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-  chip: {
-    minHeight: 36,
-    borderWidth: 1.5,
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    justifyContent: 'center',
+  sectionLabel: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
+  dateSection: { marginBottom: 16 },
+  dateToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 16,
   },
-  chipText: { fontSize: 13, color: colors.text, fontWeight: '600' },
-  chipTextActive: { color: '#FFFFFF' },
-  fieldRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  dateToggleValueRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  dateToggleValue: { fontSize: 14, color: colors.text },
+  dateToggleChevron: { fontSize: 10, color: colors.textMuted },
+  calendarSection: { marginBottom: 16 },
+  calendarDot: { width: 10, height: 10, borderRadius: 5 },
+  calendarList: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  calendarListRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 44,
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  calendarListRowBorder: { borderTopWidth: 1, borderTopColor: colors.border },
+  calendarListLabel: { flex: 1, fontSize: 14, color: colors.text },
+  calendarListCheck: { fontSize: 14, color: colors.primary, fontWeight: '700' },
+  fieldRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  fieldColumn: { flex: 1 },
+  timeLabel: { fontSize: 12, fontWeight: '600', color: colors.textMuted, marginBottom: 8 },
   fieldButton: {
     flex: 1,
     minHeight: 44,

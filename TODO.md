@@ -179,11 +179,11 @@
 - [x] FAB "+" → créer un événement — modal dédiée (`CreateEventModal`), pas de bottom sheet (réservé à l'Écran 12)
 
 ### Frontend — Écran 12 — Détail d'un événement (bottom sheet)
-- [ ] Bottom sheet avec `@gorhom/bottom-sheet`
-- [ ] Titre, date, horaire, lieu, calendrier (couleur), notes
-- [ ] Indicateur de phase : "Non concerné" OU `[phase] — [recommandation]`
-- [ ] Bouton "Voir les suggestions" si phase défavorable + événement déplaçable
-- [ ] Bouton "Se désinscrire" pour événements importés
+- [x] Bottom sheet avec `@gorhom/bottom-sheet`
+- [x] Titre, date, horaire, lieu, calendrier (couleur), notes
+- [x] Indicateur de phase : "Non concerné" OU `[phase] — [recommandation]` — texte aligné sur la maquette Figma ("Incompatible avec la phase du cycle" / "Non concerné avec la phase du cycle") plutôt que le gabarit `[phase] — [recommandation]`
+- [x] Bouton "Voir les suggestions" si phase défavorable + événement déplaçable — affiché mais non câblé (Écran 13 / RecommendationModule pas encore construits, prévus v0.4)
+- [x] Bouton "Se désinscrire" pour événements importés — + Supprimer/Modifier pour les événements locaux (hors périmètre TODO initial mais nécessaire pour un CRUD complet ; réutilise `CreateEventModal` en mode édition)
 
 ### Frontend — Écran 15 — Recherche (bottom sheet)
 - [ ] Champ de recherche avec debounce (300ms)
