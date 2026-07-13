@@ -238,7 +238,7 @@ export function CreateEventModal({
                     <View style={[styles.calendarDot, { backgroundColor: cal.color }]} />
                     <Text style={styles.calendarListLabel}>{cal.name}</Text>
                     {resolvedCalendarId === cal.id && (
-                      <Ionicons name="checkmark" size={16} color={colors.primary} />
+                      <Ionicons name="checkmark" size={20} color={colors.primary} />
                     )}
                   </Pressable>
                 ))}

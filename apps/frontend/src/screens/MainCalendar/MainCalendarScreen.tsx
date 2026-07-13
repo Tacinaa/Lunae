@@ -161,13 +161,13 @@ export function MainCalendarScreen(_props: Props) {
             accessibilityRole="button"
             accessibilityLabel="Recherche"
           >
-            <Ionicons name="search" size={20} color={colors.text} />
+            <Ionicons name="search" size={26} color={colors.text} />
           </Pressable>
           <Pressable style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Invitations">
-            <Ionicons name="mail-outline" size={20} color={colors.text} />
+            <Ionicons name="mail-outline" size={26} color={colors.text} />
           </Pressable>
           <Pressable style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Paramètres">
-            <Ionicons name="settings-outline" size={20} color={colors.text} />
+            <Ionicons name="settings-outline" size={26} color={colors.text} />
           </Pressable>
         </View>
       </View>
@@ -272,7 +272,7 @@ export function MainCalendarScreen(_props: Props) {
                 <Text style={styles.filterLabel}>{cal.name}</Text>
                 <View style={styles.filterCheck}>
                   {!hiddenCalendarIds.has(cal.id) && (
-                    <Ionicons name="checkmark" size={16} color={colors.primary} />
+                    <Ionicons name="checkmark" size={20} color={colors.primary} />
                   )}
                 </View>
               </Pressable>

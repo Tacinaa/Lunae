@@ -72,7 +72,7 @@ export function CalendarImportScreen({ navigation }: Props) {
                   accessibilityRole="button"
                   accessibilityLabel={`Retirer le compte ${account.label}`}
                 >
-                  <Ionicons name="close" size={18} color={colors.danger} />
+                  <Ionicons name="close" size={22} color={colors.danger} />
                 </Pressable>
               </View>
             ))}

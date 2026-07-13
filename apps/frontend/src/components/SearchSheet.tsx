@@ -125,7 +125,7 @@ export function SearchSheet({ visible, onClose, onSelectEvent }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Fermer la recherche"
           >
-            <Ionicons name="close" size={20} color={colors.text} />
+            <Ionicons name="close" size={24} color={colors.text} />
           </Pressable>
         </View>
 
