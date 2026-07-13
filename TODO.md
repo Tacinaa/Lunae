@@ -152,31 +152,31 @@
 ## v0.3 — Calendrier + Import (J+7)
 
 ### Backend — Module Calendar
-- [ ] Générer `CalendarModule`, `CalendarService`, `CalendarController`
-- [ ] `GET /calendars` — liste des calendriers de l'utilisatrice
-- [ ] `POST /calendars` — créer un calendrier local
-- [ ] `DELETE /calendars/:id` — supprimer un calendrier
-- [ ] `GET /events?from=&to=` — événements sur une période, enrichis avec la phase du cycle
-- [ ] `GET /events/:id` — détail d'un événement
-- [ ] `POST /events` — créer un événement
-- [ ] `PATCH /events/:id` — modifier un événement
-- [ ] `DELETE /events/:id` — supprimer un événement
-- [ ] `GET /events/search?q=` — recherche plein texte (ILIKE sur title)
+- [x] Générer `CalendarModule`, `CalendarService`, `CalendarController`
+- [x] `GET /calendars` — liste des calendriers de l'utilisatrice
+- [x] `POST /calendars` — créer un calendrier local
+- [x] `DELETE /calendars/:id` — supprimer un calendrier
+- [x] `GET /events?from=&to=` — événements sur une période, enrichis avec la phase du cycle
+- [x] `GET /events/:id` — détail d'un événement
+- [x] `POST /events` — créer un événement
+- [x] `PATCH /events/:id` — modifier un événement
+- [x] `DELETE /events/:id` — supprimer un événement
+- [x] `GET /events/search?q=` — recherche plein texte (ILIKE sur title)
 - [ ] `POST /calendars/import/google` — OAuth2 Google Calendar → stocker token + sync initiale
 - [ ] `POST /calendars/import/apple` — CalDAV Apple → stocker credentials + sync initiale
 - [ ] `POST /calendars/import/microsoft` — OAuth2 Microsoft → stocker token + sync initiale
 - [ ] `POST /calendars/:id/sync` — synchronisation incrémentale (syncToken)
 
 ### Frontend — Écran 11 — Calendrier principal
-- [ ] Grille mensuelle custom (ou `react-native-calendars`)
-- [ ] Navigation mois précédent / suivant
-- [ ] Aujourd'hui cerclé en violet
-- [ ] Bandes de couleur horizontales par semaine selon la phase (`GET /cycle/phases?from=&to=`)
-- [ ] Événements sous les jours (tronqués à ~12 chars)
-- [ ] Icônes barre sup : 🔍 Recherche, 📥 Invitations, ⚙️ Paramètres
-- [ ] Bouton "Aujourd'hui" (bas)
-- [ ] Bouton "Calendriers" (filtre) (bas)
-- [ ] FAB "+" → créer un événement
+- [x] Grille mensuelle custom (ou `react-native-calendars`) — implémentation custom (`utils/calendarGrid.ts`), pas de dépendance ajoutée
+- [x] Navigation mois précédent / suivant
+- [x] Aujourd'hui cerclé en violet
+- [x] Bandes de couleur horizontales par semaine selon la phase (`GET /cycle/phases?from=&to=`) — fond de cellule teinté par phase (jours consécutifs de même phase → bande continue), pas d'agrégat par semaine
+- [x] Événements sous les jours (tronqués à ~12 chars)
+- [x] Icônes barre sup : 🔍 Recherche, 📥 Invitations, ⚙️ Paramètres — affichées, non câblées (écrans Recherche/Invitations pas encore construits, cf. Écrans 14/15)
+- [x] Bouton "Aujourd'hui" (bas)
+- [x] Bouton "Calendriers" (filtre) (bas) — panneau local avec cases à cocher par calendrier (`GET /calendars`)
+- [x] FAB "+" → créer un événement — modal dédiée (`CreateEventModal`), pas de bottom sheet (réservé à l'Écran 12)
 
 ### Frontend — Écran 12 — Détail d'un événement (bottom sheet)
 - [ ] Bottom sheet avec `@gorhom/bottom-sheet`
@@ -191,7 +191,7 @@
 - [ ] Résultats groupés par date
 
 ### Tests unitaires (frontend)
-- [ ] Mapping phase → couleur (bandes du calendrier) — chaque `Phase` retourne la bonne couleur
+- [x] Mapping phase → couleur (bandes du calendrier) — chaque `Phase` retourne la bonne couleur
 - [ ] Hook de debounce de la recherche — n'appelle l'API qu'après le délai, annule l'appel précédent si nouvelle frappe
 
 ---
@@ -292,3 +292,6 @@
 - Notifications push avancées
 - Passkey / 2FA SMS (P2 — optionnel)
 - Bouton "Continuer avec Apple / Google" (SSO)
+- **Vue Semaine/Jour** (maquette `Figma/Vue jours.png` et `Figma/semaine.png`) — agenda horaire par jour avec sélecteur de jours de la semaine en haut, statuts d'invitation par couleur de bloc (déclinée = gris, en attente = contour blanc, peut-être = beige), icône de récurrence, temps de trajet avant événement
+- **Vue Année** (maquette `Figma/Vue année.png`) — grille des 12 mois miniatures, mêmes boutons bas de page (Aujourd'hui / Calendriers) et FAB que la vue mois
+- **Import des données de cycle depuis Flo/Clue** (maquette `Figma/Import autres calendriers-1.png`) — écran "Récupérons vos données de cycle", distinct de l'import de calendriers externes

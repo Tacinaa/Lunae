@@ -8,8 +8,20 @@ export const colors = {
 };
 
 export const phaseColors = {
-  menstruation: '#C0392B',
-  follicular: '#6B3FA0',
-  ovulation: '#2E8B57',
-  luteal: '#D9822B',
+  menstruation: '#E05A7E',
+  follicular: '#26C485',
+  ovulation: '#3A9CFF',
+  luteal: '#E87325',
 } as const;
+
+export function getPhaseColor(phase: keyof typeof phaseColors): string {
+  return phaseColors[phase];
+}
+
+export function hexToRgba(hex: string, alpha: number): string {
+  const value = hex.replace('#', '');
+  const r = parseInt(value.slice(0, 2), 16);
+  const g = parseInt(value.slice(2, 4), 16);
+  const b = parseInt(value.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
