@@ -90,15 +90,31 @@ async function main() {
 
   const cycleLength = 28;
   const periodDuration = 5;
-  // Démarré 13 jours avant aujourd'hui → "aujourd'hui" tombe en ovulation (vert),
+  // Cycle courant démarré 13 jours avant aujourd'hui → "aujourd'hui" tombe en ovulation (vert),
   // avec menstruation/folliculaire dans le passé récent et lutéale à venir, visibles sur la grille du mois.
-  const startDate = addDays(today, -13);
+  const currentCycleStart = addDays(today, -13);
+  // Cycle précédent, cohérent (même durée), enchaîné juste avant : donne de l'historique pour
+  // predictNextPeriod() et étend la couverture des phases pour tester la navigation mois
+  // précédent/suivant.
+  const previousCycleStart = addDays(currentCycleStart, -cycleLength);
+  // Cycle suivant, enchaîné juste après le cycle courant (donc après le dernier événement
+  // seedé, dayOffset max 13) : garantit qu'il existe toujours une phase favorable à venir vers
+  // laquelle déplacer un événement, même pour ceux déjà en fin de couverture du cycle courant.
+  const nextCycleStart = addDays(currentCycleStart, cycleLength);
 
-  await prisma.cycleEntry.create({
-    data: { userId: user.id, startDate, cycleLength, periodDuration },
+  await prisma.cycleEntry.createMany({
+    data: [
+      { userId: user.id, startDate: previousCycleStart, cycleLength, periodDuration },
+      { userId: user.id, startDate: currentCycleStart, cycleLength, periodDuration },
+      { userId: user.id, startDate: nextCycleStart, cycleLength, periodDuration },
+    ],
   });
 
-  const phases = calculatePhases(startDate, cycleLength, periodDuration);
+  const phases = [
+    ...calculatePhases(previousCycleStart, cycleLength, periodDuration),
+    ...calculatePhases(currentCycleStart, cycleLength, periodDuration),
+    ...calculatePhases(nextCycleStart, cycleLength, periodDuration),
+  ];
   await prisma.cyclePhase.createMany({
     data: phases.map((p) => ({
       userId: user.id,
@@ -136,7 +152,7 @@ async function main() {
   });
 
   console.log(`Utilisateur de démo prêt : ${TEST_EMAIL} / ${TEST_PASSWORD}`);
-  console.log(`${DEMO_EVENTS.length} événements + ${phases.length} jours de phase créés.`);
+  console.log(`${DEMO_EVENTS.length} événements + 3 cycles (${phases.length} jours de phase) créés.`);
   console.log('Le code OTP de connexion sera affiché dans les logs du backend (SMTP non configuré).');
 }
 
