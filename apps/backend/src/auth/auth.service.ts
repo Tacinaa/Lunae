@@ -45,6 +45,10 @@ export class AuthService {
       },
     });
 
+    await this.prisma.calendar.create({
+      data: { userId: user.id, name: 'Personnel' },
+    });
+
     await this.sendOtp(user.id, user.email, OtpType.email_verification);
     return { message: 'Code de vérification envoyé par email' };
   }
