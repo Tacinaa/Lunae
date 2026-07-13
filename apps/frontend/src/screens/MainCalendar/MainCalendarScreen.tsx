@@ -6,6 +6,7 @@ import { getCalendars, getEvents, type CalendarDto, type EventDto } from '../../
 import { getPhasesInRange } from '../../api/cycle';
 import { CreateEventModal } from '../../components/CreateEventModal';
 import { EventDetailSheet } from '../../components/EventDetailSheet';
+import { SearchSheet } from '../../components/SearchSheet';
 import type { AppStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/authStore';
 import type { Phase, PhaseEntry } from '../../store/cycleStore';
@@ -44,6 +45,7 @@ export function MainCalendarScreen(_props: Props) {
   const [editingEvent, setEditingEvent] = useState<EventDto | null>(null);
   const [editFocusDate, setEditFocusDate] = useState(false);
   const [detailEvent, setDetailEvent] = useState<EventDto | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
   const logout = useAuthStore((state) => state.logout);
 
   const weeks = useMemo(() => getMonthMatrix(visibleYear, visibleMonth), [visibleYear, visibleMonth]);
@@ -152,7 +154,12 @@ export function MainCalendarScreen(_props: Props) {
       <View style={styles.topBar}>
         <Text style={styles.appTitle}>Lunae</Text>
         <View style={styles.topBarIcons}>
-          <Pressable style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Recherche">
+          <Pressable
+            style={styles.iconButton}
+            onPress={() => setShowSearch(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Recherche"
+          >
             <Text style={styles.icon}>🔍</Text>
           </Pressable>
           <Pressable style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Invitations">
@@ -337,6 +344,15 @@ export function MainCalendarScreen(_props: Props) {
           setEditingEvent(event);
         }}
         onDeleted={handleEventDeleted}
+      />
+
+      <SearchSheet
+        visible={showSearch}
+        onClose={() => setShowSearch(false)}
+        onSelectEvent={(event) => {
+          setShowSearch(false);
+          setDetailEvent(event);
+        }}
       />
     </SafeAreaView>
   );

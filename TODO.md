@@ -173,7 +173,7 @@
 - [x] Aujourd'hui cerclé en violet
 - [x] Bandes de couleur horizontales par semaine selon la phase (`GET /cycle/phases?from=&to=`) — trait fin en bas de chaque cellule, coloré par phase (jours consécutifs de même phase → bande continue) ; le fond de cellule teinté envisagé initialement a été abandonné (confusion avec la couleur du calendrier des événements)
 - [x] Événements sous les jours (tronqués à ~12 chars)
-- [x] Icônes barre sup : 🔍 Recherche, 📥 Invitations, ⚙️ Paramètres — affichées, non câblées (écrans Recherche/Invitations pas encore construits, cf. Écrans 14/15)
+- [x] Icônes barre sup : 🔍 Recherche, 📥 Invitations, ⚙️ Paramètres — 🔍 câblée (ouvre l'Écran 15) ; 📥 et ⚙️ affichées mais non câblées (Écran 14 Invitations en v0.4, pas d'écran Paramètres prévu au TODO)
 - [x] Bouton "Aujourd'hui" (bas)
 - [x] Bouton "Calendriers" (filtre) (bas) — panneau local avec cases à cocher par calendrier (`GET /calendars`)
 - [x] FAB "+" → créer un événement — modal dédiée (`CreateEventModal`), pas de bottom sheet (réservé à l'Écran 12)
@@ -186,13 +186,13 @@
 - [x] Bouton "Se désinscrire" pour événements importés — + Supprimer/Modifier pour les événements locaux (hors périmètre TODO initial mais nécessaire pour un CRUD complet ; réutilise `CreateEventModal` en mode édition)
 
 ### Frontend — Écran 15 — Recherche (bottom sheet)
-- [ ] Champ de recherche avec debounce (300ms)
-- [ ] Appel `GET /events/search?q=`
-- [ ] Résultats groupés par date
+- [x] Champ de recherche avec debounce (300ms) — `hooks/useDebouncedValue.ts`, bottom sheet dédié (`SearchSheet`), ouvert depuis l'icône 🔍 de l'Écran 11
+- [x] Appel `GET /events/search?q=`
+- [x] Résultats groupés par date — tap sur un résultat → ouvre la fiche détail (Écran 12)
 
 ### Tests unitaires (frontend)
 - [x] Mapping phase → couleur (bandes du calendrier) — chaque `Phase` retourne la bonne couleur
-- [ ] Hook de debounce de la recherche — n'appelle l'API qu'après le délai, annule l'appel précédent si nouvelle frappe
+- [x] Hook de debounce de la recherche — n'appelle l'API qu'après le délai, annule l'appel précédent si nouvelle frappe
 
 ---
 

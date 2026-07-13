@@ -75,3 +75,8 @@ export async function updateEvent(id: string, payload: UpdateEventPayload): Prom
 export async function deleteEvent(id: string): Promise<void> {
   await apiClient.delete(`/events/${id}`);
 }
+
+export async function searchEvents(query: string): Promise<EventDto[]> {
+  const { data } = await apiClient.get<EventDto[]>('/events/search', { params: { q: query } });
+  return data;
+}
