@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -160,13 +161,13 @@ export function MainCalendarScreen(_props: Props) {
             accessibilityRole="button"
             accessibilityLabel="Recherche"
           >
-            <Text style={styles.icon}>🔍</Text>
+            <Ionicons name="search" size={20} color={colors.text} />
           </Pressable>
           <Pressable style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Invitations">
-            <Text style={styles.icon}>📥</Text>
+            <Ionicons name="mail-outline" size={20} color={colors.text} />
           </Pressable>
           <Pressable style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Paramètres">
-            <Text style={styles.icon}>⚙️</Text>
+            <Ionicons name="settings-outline" size={20} color={colors.text} />
           </Pressable>
         </View>
       </View>
@@ -269,7 +270,11 @@ export function MainCalendarScreen(_props: Props) {
               >
                 <View style={[styles.filterDot, { backgroundColor: cal.color }]} />
                 <Text style={styles.filterLabel}>{cal.name}</Text>
-                <Text style={styles.filterCheck}>{hiddenCalendarIds.has(cal.id) ? '' : '✓'}</Text>
+                <View style={styles.filterCheck}>
+                  {!hiddenCalendarIds.has(cal.id) && (
+                    <Ionicons name="checkmark" size={16} color={colors.primary} />
+                  )}
+                </View>
               </Pressable>
             ))
           )}
@@ -370,7 +375,6 @@ const styles = StyleSheet.create({
   appTitle: { fontSize: 20, fontWeight: '700', color: colors.primary },
   topBarIcons: { flexDirection: 'row' },
   iconButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  icon: { fontSize: 18 },
   monthNav: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -445,7 +449,7 @@ const styles = StyleSheet.create({
   },
   filterDot: { width: 12, height: 12, borderRadius: 6, marginRight: 12 },
   filterLabel: { flex: 1, fontSize: 14, color: colors.text },
-  filterCheck: { fontSize: 14, color: colors.primary, fontWeight: '700', width: 20 },
+  filterCheck: { width: 20, alignItems: 'center', justifyContent: 'center' },
   bottomBar: {
     flexDirection: 'row',
     borderTopWidth: 1,

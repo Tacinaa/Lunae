@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, {
   type DateTimePickerChangeEvent,
 } from '@react-native-community/datetimepicker';
@@ -236,7 +237,9 @@ export function CreateEventModal({
                   >
                     <View style={[styles.calendarDot, { backgroundColor: cal.color }]} />
                     <Text style={styles.calendarListLabel}>{cal.name}</Text>
-                    {resolvedCalendarId === cal.id && <Text style={styles.calendarListCheck}>✓</Text>}
+                    {resolvedCalendarId === cal.id && (
+                      <Ionicons name="checkmark" size={16} color={colors.primary} />
+                    )}
                   </Pressable>
                 ))}
               </View>
@@ -390,7 +393,6 @@ const styles = StyleSheet.create({
   },
   calendarListRowBorder: { borderTopWidth: 1, borderTopColor: colors.border },
   calendarListLabel: { flex: 1, fontSize: 14, color: colors.text },
-  calendarListCheck: { fontSize: 14, color: colors.primary, fontWeight: '700' },
   fieldRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
   fieldColumn: { flex: 1 },
   timeLabel: { fontSize: 12, fontWeight: '600', color: colors.textMuted, marginBottom: 8 },

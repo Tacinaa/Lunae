@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import {
   BottomSheetModal,
   BottomSheetScrollView,
@@ -124,7 +125,7 @@ export function SearchSheet({ visible, onClose, onSelectEvent }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Fermer la recherche"
           >
-            <Text style={styles.closeButtonText}>✕</Text>
+            <Ionicons name="close" size={20} color={colors.text} />
           </Pressable>
         </View>
 
@@ -197,7 +198,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closeButtonText: { fontSize: 16, color: colors.text },
   resultsScroll: { flex: 1 },
   resultsContent: { paddingHorizontal: 24, paddingBottom: 40 },
   loader: { marginVertical: 12 },

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -71,7 +72,7 @@ export function CalendarImportScreen({ navigation }: Props) {
                   accessibilityRole="button"
                   accessibilityLabel={`Retirer le compte ${account.label}`}
                 >
-                  <Text style={styles.removeButtonText}>×</Text>
+                  <Ionicons name="close" size={18} color={colors.danger} />
                 </Pressable>
               </View>
             ))}
@@ -143,7 +144,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  removeButtonText: { color: colors.danger, fontSize: 20, fontWeight: '600', lineHeight: 22 },
   nextButton: {
     backgroundColor: colors.primary,
     minHeight: 44,
