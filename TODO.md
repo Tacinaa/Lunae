@@ -352,8 +352,13 @@
   dans le dossier de certification (grille C2.2.3).
 
 ### Build Expo
-- [ ] Configurer `eas.json` pour EAS Build (profiles development, preview, production)
-- [ ] `eas build --platform all --profile preview` → générer les binaires de test
+- [x] Configurer `eas.json` pour EAS Build (profiles development, preview, production) — compte
+  Expo lié (`eas login` + `eas init`), projet créé : `@tacina/frontend` (projectId dans
+  `app.json`/`extra.eas.projectId`). `eas.json` généré via `eas build:configure --platform all`
+  (profils standards, pas modifiés à la main pour rester compatible avec la version d'`eas-cli`
+  installée). `eas-cli` ajouté en devDependency.
+- [ ] `eas build --platform all --profile preview` → générer les binaires de test — pas encore
+  lancé (build cloud ~10-20 min, à faire quand un binaire de test est nécessaire)
 
 ---
 
