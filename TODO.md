@@ -300,6 +300,7 @@
   - [ ] CR-10 : Recherche "Boxe" → résultats filtrés
   - [ ] CR-11 : Accepter invitation → statut "Accepté"
   - [ ] CR-12 : Token expiré → 401 + refresh automatique
+  - [ ] CR-13 : Navigation complète avec VoiceOver (iOS) et TalkBack (Android) → tous les éléments interactifs annoncés correctement (cf. Accessibilité)
 
 ### Accessibilité (WCAG AA)
 - [x] Vérifier ratio de contraste violet #6B3FA0 sur fond blanc (≥ 4.5:1) — 7.38:1, conforme (calcul luminance relative WCAG). Au passage, couleurs de phase vérifiées aussi (`utils/theme.ts`) : traits de phase 4.10–12.99:1 vs blanc (seuil 3:1 non-textuel), contour du jour suggéré 4.10:1
@@ -312,14 +313,22 @@
   (`EventDetailSheet`), onglets + boutons Peut-être/Refuser/Accepter (`InvitationsSheet`),
   bouton de reset dev (`MainCalendarScreen`)
 - [ ] Tester avec VoiceOver (iOS) et TalkBack (Android) — nécessite un test manuel sur device,
-  reporté au cahier de recette
+  reporté au cahier de recette (cf. CR-13)
 - [x] Chaque phase du cycle a couleur + icône + label texte (pas de dépendance couleur seule) —
   la grille du calendrier principal n'encodait la phase que par la couleur du trait sous chaque
-  jour (violation WCAG 1.4.1, palette violet/magenta peu distinguable pour un daltonien).
-  Décision validée avec l'utilisateur : `accessibilityLabel` du jour enrichi avec le nom de la
-  phase ("9 juillet, phase menstruation") plutôt qu'un repère visuel supplémentaire (pointillé/
-  icône) — résout le cas lecteur d'écran (VoiceOver/TalkBack), pas le cas daltonien sighted sans
-  lecteur d'écran ; accepté comme compromis pour le MVP, à revoir si besoin identifié en usage réel.
+  jour (violation WCAG 1.4.1, palette violet/magenta peu distinguable pour un daltonien) :
+  - [x] Label texte pour lecteur d'écran — `accessibilityLabel` du jour enrichi avec le nom de la
+    phase ("9 juillet, phase menstruation"), couvre VoiceOver/TalkBack
+  - [x] Repère visuel non-couleur par phase sur la grille — le trait de phase (une seule barre
+    pleine auparavant) est redécoupé en segments (`phaseSegmentsRow`/`phaseSegment` dans
+    `MainCalendarScreen.tsx`, `getPhaseSegmentCount()` dans `utils/theme.ts`), dont le nombre
+    correspond à la position de la phase dans le cycle : menstruation = 1 segment plein,
+    folliculaire = 2, ovulation = 3, lutéale = 4 — mnémotechnique, ne dépend pas de `borderStyle:
+    'dashed'` (rendu incohérent sur Android). Option alternative écartée (épaisseur variable +
+    pointillés) : ne distingue que 2 groupes sur 4 et peu fiable sur Android. Testé sur device par
+    l'utilisateur : fonctionne, lisible, mais jugé moins esthétique que le trait plein d'origine —
+    compromis accepté pour le MVP (fonctionnel avant esthétique sur ce point), à revisiter en post-MVP
+    si besoin (cf. Backlog).
 
 ### RGPD
 - [x] Ajouter `DELETE /users/me` → suppression en cascade de toutes les données (toutes les
@@ -359,3 +368,4 @@
 - **Vue Semaine/Jour** (maquette `Figma/Vue jours.png` et `Figma/semaine.png`) — agenda horaire par jour avec sélecteur de jours de la semaine en haut, statuts d'invitation par couleur de bloc (déclinée = gris, en attente = contour blanc, peut-être = beige), icône de récurrence, temps de trajet avant événement
 - **Vue Année** (maquette `Figma/Vue année.png`) — grille des 12 mois miniatures, mêmes boutons bas de page (Aujourd'hui / Calendriers) et FAB que la vue mois
 - **Import des données de cycle depuis Flo/Clue** (maquette `Figma/Import autres calendriers-1.png`) — écran "Récupérons vos données de cycle", distinct de l'import de calendriers externes
+- **Repère visuel de phase plus esthétique** — le repère par segments (nombre = position dans le cycle, cf. Accessibilité) fonctionne et est lisible mais jugé moins joli que le trait plein d'origine ; revoir le design (icône, motif) sans perdre la propriété "pas de dépendance couleur seule"

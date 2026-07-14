@@ -22,7 +22,7 @@ import {
 import { getErrorMessage } from '../../utils/errors';
 import { resetOnboardingSeen } from '../../utils/onboarding';
 import { PHASE_LABELS } from '../../utils/phaseRecommendation';
-import { colors, getPhaseColor, hexToRgba } from '../../utils/theme';
+import { colors, getPhaseColor, getPhaseSegmentCount, hexToRgba } from '../../utils/theme';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'MainCalendar'>;
 
@@ -262,7 +262,14 @@ export function MainCalendarScreen(_props: Props) {
                     );
                   })}
                   {phase && (
-                    <View style={[styles.phaseLine, { backgroundColor: getPhaseColor(phase) }]} />
+                    <View style={styles.phaseSegmentsRow}>
+                      {Array.from({ length: getPhaseSegmentCount(phase) }).map((_, i) => (
+                        <View
+                          key={i}
+                          style={[styles.phaseSegment, { backgroundColor: getPhaseColor(phase) }]}
+                        />
+                      ))}
+                    </View>
                   )}
                 </View>
               );
@@ -444,10 +451,15 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   eventPillText: { fontSize: 8.5, fontWeight: '600' },
-  phaseLine: {
+  phaseSegmentsRow: {
+    flexDirection: 'row',
+    gap: 2,
+    marginTop: 4,
+  },
+  phaseSegment: {
+    flex: 1,
     height: 3,
     borderRadius: 1.5,
-    marginTop: 4,
   },
   filterPanel: {
     position: 'absolute',

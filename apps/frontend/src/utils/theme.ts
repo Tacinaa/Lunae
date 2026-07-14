@@ -18,6 +18,22 @@ export function getPhaseColor(phase: keyof typeof phaseColors): string {
   return phaseColors[phase];
 }
 
+/**
+ * Repère visuel non-couleur pour distinguer les phases (WCAG 1.4.1) : le nombre de segments
+ * correspond à la position de la phase dans le cycle plutôt qu'à un pointillé (`borderStyle:
+ * 'dashed'` a un rendu incohérent sur Android).
+ */
+export const phaseSegmentCount = {
+  menstruation: 1,
+  follicular: 2,
+  ovulation: 3,
+  luteal: 4,
+} as const;
+
+export function getPhaseSegmentCount(phase: keyof typeof phaseSegmentCount): number {
+  return phaseSegmentCount[phase];
+}
+
 export function hexToRgba(hex: string, alpha: number): string {
   const value = hex.replace('#', '');
   const r = parseInt(value.slice(0, 2), 16);

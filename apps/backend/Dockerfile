@@ -14,7 +14,6 @@ FROM node:22-slim AS production
 WORKDIR /app
 ENV NODE_ENV=production
 RUN apt-get update -y && apt-get install -y openssl
-
 COPY package*.json ./
 COPY prisma ./prisma
 RUN npm ci --omit=dev
