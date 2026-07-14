@@ -7,6 +7,7 @@ export type AuthStackParamList = {
 };
 
 export type OnboardingSetupStackParamList = {
+  Consent: undefined;
   CycleSetup: undefined;
   CalendarPermission: undefined;
   CalendarImport: undefined;
