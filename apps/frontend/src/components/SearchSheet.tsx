@@ -13,6 +13,7 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { toDateKey } from '../utils/calendarGrid';
 import { getErrorMessage } from '../utils/errors';
 import { colors } from '../utils/theme';
+import { renderSheetBackdrop } from './SheetBackdrop';
 
 interface Props {
   visible: boolean;
@@ -21,7 +22,7 @@ interface Props {
 }
 
 const DEBOUNCE_MS = 300;
-const SNAP_POINTS = ['100%'];
+const SNAP_POINTS = ['80%'];
 
 function formatGroupLabel(date: Date): string {
   const formatted = date.toLocaleDateString('fr-FR', {
@@ -102,6 +103,8 @@ export function SearchSheet({ visible, onClose, onSelectEvent }: Props) {
     <BottomSheetModal
       ref={sheetRef}
       snapPoints={SNAP_POINTS}
+      enableDynamicSizing={false}
+      backdropComponent={renderSheetBackdrop}
       topInset={insets.top}
       keyboardBehavior="extend"
       keyboardBlurBehavior="restore"

@@ -11,6 +11,7 @@ import {
 } from '../api/invitations';
 import { getErrorMessage } from '../utils/errors';
 import { colors } from '../utils/theme';
+import { renderSheetBackdrop } from './SheetBackdrop';
 
 interface Props {
   visible: boolean;
@@ -107,6 +108,8 @@ export function InvitationsSheet({ visible, onClose }: Props) {
     <BottomSheetModal
       ref={sheetRef}
       snapPoints={SNAP_POINTS}
+      enableDynamicSizing={false}
+      backdropComponent={renderSheetBackdrop}
       topInset={insets.top}
       onDismiss={handleDismiss}
       backgroundStyle={styles.sheetBackground}

@@ -1,10 +1,11 @@
-import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import { BottomSheetModal, BottomSheetScrollView, BottomSheetView } from '@gorhom/bottom-sheet';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { deleteEvent, type EventDto } from '../api/calendar';
 import type { Phase } from '../store/cycleStore';
 import { getErrorMessage } from '../utils/errors';
 import { CATEGORY_LABELS, isUnfavorablePhase, PHASE_LABELS } from '../utils/phaseRecommendation';
+import { renderSheetBackdrop } from './SheetBackdrop';
 import { colors } from '../utils/theme';
 
 interface Props {
@@ -15,6 +16,8 @@ interface Props {
   onChooseSlot: (event: EventDto) => void;
   onDeleted: (eventId: string) => void;
 }
+
+const SNAP_POINTS = ['80%'];
 
 function formatDate(date: Date): string {
   const formatted = date.toLocaleDateString('fr-FR', {
@@ -68,72 +71,76 @@ export function EventDetailSheet({ event, phase, onClose, onEdit, onChooseSlot, 
   return (
     <BottomSheetModal
       ref={sheetRef}
-      enableDynamicSizing
+      snapPoints={SNAP_POINTS}
+      enableDynamicSizing={false}
+      backdropComponent={renderSheetBackdrop}
       onDismiss={onClose}
       backgroundStyle={styles.sheetBackground}
     >
-      <BottomSheetView style={styles.content}>
-        <Text style={styles.title}>{event.title}</Text>
+      <BottomSheetView style={styles.container}>
+        <BottomSheetScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+          <Text style={styles.title}>{event.title}</Text>
 
-        {event.notes ? <Text style={styles.notes}>{event.notes}</Text> : null}
+          {event.notes ? <Text style={styles.notes}>{event.notes}</Text> : null}
 
-        <Text style={styles.date}>{formatDate(new Date(event.startAt))}</Text>
+          <Text style={styles.date}>{formatDate(new Date(event.startAt))}</Text>
 
-        {!event.isMovable ? (
-          <View style={styles.phaseRow}>
-            <Text style={styles.phaseIconNeutral}>⊘</Text>
-            <Text style={styles.phaseTextNeutral}>Non concerné avec la phase du cycle</Text>
-          </View>
-        ) : isUnfavorable ? (
-          <>
+          {!event.isMovable ? (
             <View style={styles.phaseRow}>
-              <Text style={styles.phaseIconWarning}>⊗</Text>
-              <Text style={styles.phaseTextWarning}>Incompatible avec la phase du cycle</Text>
+              <Text style={styles.phaseIconNeutral}>⊘</Text>
+              <Text style={styles.phaseTextNeutral}>Non concerné avec la phase du cycle</Text>
             </View>
-            {!bannerDismissed && (
-              <View style={styles.banner}>
-                <Text style={styles.bannerText}>
-                  Nous vous recommandons de déplacer{' '}
-                  <Text style={styles.bannerTextBold}>{event.title}</Text> : la phase{' '}
-                  {phase ? PHASE_LABELS[phase] : ''} n’est pas idéale pour un événement de type{' '}
-                  {CATEGORY_LABELS[event.eventType]}.
-                </Text>
-                <View style={styles.bannerActions}>
-                  <Pressable
-                    style={styles.bannerIgnoreButton}
-                    onPress={() => setBannerDismissed(true)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Garder la date actuelle"
-                  >
-                    <Text style={styles.bannerIgnoreText}>Garder cette date</Text>
-                  </Pressable>
-                  <Pressable
-                    style={styles.bannerMoveButton}
-                    onPress={() => onChooseSlot(event)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Choisir un autre créneau"
-                  >
-                    <Text style={styles.bannerMoveText}>Choisir un créneau</Text>
-                  </Pressable>
-                </View>
+          ) : isUnfavorable ? (
+            <>
+              <View style={styles.phaseRow}>
+                <Text style={styles.phaseIconWarning}>⊗</Text>
+                <Text style={styles.phaseTextWarning}>Incompatible avec la phase du cycle</Text>
               </View>
-            )}
-          </>
-        ) : null}
+              {!bannerDismissed && (
+                <View style={styles.banner}>
+                  <Text style={styles.bannerText}>
+                    Nous vous recommandons de déplacer{' '}
+                    <Text style={styles.bannerTextBold}>{event.title}</Text> : la phase{' '}
+                    {phase ? PHASE_LABELS[phase] : ''} n’est pas idéale pour un événement de type{' '}
+                    {CATEGORY_LABELS[event.eventType]}.
+                  </Text>
+                  <View style={styles.bannerActions}>
+                    <Pressable
+                      style={styles.bannerIgnoreButton}
+                      onPress={() => setBannerDismissed(true)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Garder la date actuelle"
+                    >
+                      <Text style={styles.bannerIgnoreText}>Garder cette date</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.bannerMoveButton}
+                      onPress={() => onChooseSlot(event)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Choisir un autre créneau"
+                    >
+                      <Text style={styles.bannerMoveText}>Choisir un créneau</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+            </>
+          ) : null}
 
-        <Text style={styles.time}>{formatTimeRange(new Date(event.startAt), new Date(event.endAt))}</Text>
+          <Text style={styles.time}>{formatTimeRange(new Date(event.startAt), new Date(event.endAt))}</Text>
 
-        {event.location ? <Text style={styles.location}>{event.location}</Text> : null}
+          {event.location ? <Text style={styles.location}>{event.location}</Text> : null}
 
-        {event.calendar && (
-          <View style={styles.calendarRow}>
-            <Text style={styles.fieldLabel}>Calendrier</Text>
-            <View style={styles.calendarValue}>
-              <View style={[styles.calendarDot, { backgroundColor: event.calendar.color }]} />
-              <Text style={styles.calendarName}>{event.calendar.name}</Text>
+          {event.calendar && (
+            <View style={styles.calendarRow}>
+              <Text style={styles.fieldLabel}>Calendrier</Text>
+              <View style={styles.calendarValue}>
+                <View style={[styles.calendarDot, { backgroundColor: event.calendar.color }]} />
+                <Text style={styles.calendarName}>{event.calendar.name}</Text>
+              </View>
             </View>
-          </View>
-        )}
+          )}
+        </BottomSheetScrollView>
 
         <View style={styles.actionsRow}>
           {isImported ? (
@@ -173,7 +180,9 @@ export function EventDetailSheet({ event, phase, onClose, onEdit, onChooseSlot, 
 
 const styles = StyleSheet.create({
   sheetBackground: { backgroundColor: colors.background },
-  content: { padding: 24, paddingBottom: 40 },
+  container: { flex: 1 },
+  scroll: { flex: 1 },
+  content: { padding: 24, paddingBottom: 16 },
   title: { fontSize: 22, fontWeight: '700', color: colors.text, marginBottom: 8 },
   notes: { fontSize: 14, color: colors.textMuted, marginBottom: 16, lineHeight: 20 },
   date: { fontSize: 14, color: colors.text, marginBottom: 8 },
@@ -220,7 +229,14 @@ const styles = StyleSheet.create({
   },
   calendarDot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
   calendarName: { fontSize: 14, color: colors.text },
-  actionsRow: { flexDirection: 'row', gap: 12 },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 24,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
   deleteButton: {
     flex: 1,
     minHeight: 44,
