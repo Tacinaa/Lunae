@@ -287,20 +287,39 @@
   qu'un seuil intentionnellement cassé fait échouer `test:cov`, pas juste silencieusement ignoré).
 - [x] Passer tous les tests unitaires définis en v0.1, v0.2, v0.3 et v0.4 au vert (aucun test e2e
   prévu — hors scope du projet) — 37 tests backend, 41 tests frontend, tous verts
-- [ ] Cahier de recette — vérifier manuellement CR-01 à CR-12 :
-  - [ ] CR-01 : Inscription email valide → OTP reçu
-  - [ ] CR-02 : Email déjà utilisé → erreur claire
-  - [ ] CR-03 : OTP correct → accès accordé
-  - [ ] CR-04 : OTP expiré → message d'erreur
-  - [ ] CR-05 : Saisie cycle → phase correcte dans le calendrier
-  - [ ] CR-06 : Vue mensuelle → 4 bandes de couleur visibles
-  - [ ] CR-07 : Événement en menstruation déplaçable → suggestion proposée
-  - [ ] CR-08 : Accepter une suggestion → événement déplacé
-  - [ ] CR-09 : Import Google Calendar → événements visibles
-  - [ ] CR-10 : Recherche "Boxe" → résultats filtrés
-  - [ ] CR-11 : Accepter invitation → statut "Accepté"
-  - [ ] CR-12 : Token expiré → 401 + refresh automatique
-  - [ ] CR-13 : Navigation complète avec VoiceOver (iOS) et TalkBack (Android) → tous les éléments interactifs annoncés correctement (cf. Accessibilité)
+- [ ] Cahier de recette — vérifier manuellement CR-01 à CR-13. CR-01/02/03/04/05/07/08/10/11/12
+  vérifiés par appels API réels (curl) sur une instance backend isolée (port 3002, même BDD),
+  compte de test créé puis supprimé via `DELETE /users/me` en fin de vérification (double usage :
+  nettoyage + revalidation de l'endpoint via un vrai appel HTTP). CR-06 confirmé par l'utilisateur
+  sur device. CR-09 reste ouvert (import non implémenté) ; CR-13 partiellement fait (TalkBack
+  validé, VoiceOver en attente d'un test sur iPhone) :
+  - [x] CR-01 : Inscription email valide → OTP reçu — 201, OTP `236583` généré et loggé
+  - [x] CR-02 : Email déjà utilisé → erreur claire — 409 "Email déjà utilisé"
+  - [x] CR-03 : OTP correct → accès accordé — 200, access + refresh token émis
+  - [x] CR-04 : OTP expiré → message d'erreur — OTP forcé expiré en base, 401 "Code expiré"
+  - [x] CR-05 : Saisie cycle → phase correcte dans le calendrier — cycle créé (28j/5j, début
+    aujourd'hui), `GET /cycle/current-phase` → menstruation, jour 1, conforme
+  - [x] CR-06 : Vue mensuelle → 4 bandes de couleur visibles — confirmé par l'utilisateur sur device (visible aussi sur la capture d'écran du 2026-07-15, avec les segments par phase)
+  - [x] CR-07 : Événement en menstruation déplaçable → suggestion proposée — événement
+    `sport_intense` créé en menstruation, suggestions générées automatiquement (meilleures en
+    ovulation, score 3)
+  - [x] CR-08 : Accepter une suggestion → événement déplacé — `POST /suggestions/:id/accept` →
+    suggestion "accepted", `startAt`/`endAt` de l'événement mis à jour à la date suggérée
+  - [ ] CR-09 : Import Google Calendar → événements visibles — fonctionnalité non implémentée
+    (v0.3 résiduel, cf. import calendriers externes), non testable en l'état
+  - [x] CR-10 : Recherche "Boxe" → résultats filtrés — `GET /events/search?q=Boxe` → 1 résultat,
+    insensible à la casse
+  - [x] CR-11 : Accepter invitation → statut "Accepté" — `PATCH /invitations/:id` →
+    `status: "accepted"`
+  - [x] CR-12 : Token expiré → 401 + refresh automatique — token invalide → 401 ;
+    `POST /auth/refresh` avec refresh token valide → nouveau access token. Partie "automatique"
+    (interception 401 côté client) déjà testée unitairement (`client.spec.ts`)
+  - CR-13 : Navigation complète avec VoiceOver (iOS) et TalkBack (Android) → tous les éléments
+    interactifs annoncés correctement (cf. Accessibilité) :
+    - [x] TalkBack (Android) — validé par l'utilisateur sur device : les `accessibilityLabel`
+      sont annoncés comme prévu (grille du calendrier avec la phase, onglets d'`InvitationsSheet`)
+    - [ ] VoiceOver (iOS) — pas d'iPhone disponible pour l'instant ; prévu via un build EAS
+      (`eas build --profile preview`) installé directement sur iPhone plutôt que via Expo Go
 
 ### Accessibilité (WCAG AA)
 - [x] Vérifier ratio de contraste violet #6B3FA0 sur fond blanc (≥ 4.5:1) — 7.38:1, conforme (calcul luminance relative WCAG). Au passage, couleurs de phase vérifiées aussi (`utils/theme.ts`) : traits de phase 4.10–12.99:1 vs blanc (seuil 3:1 non-textuel), contour du jour suggéré 4.10:1
@@ -312,8 +331,9 @@
   mini-calendrier (`EventDatePicker`), boutons "Garder cette date"/"Choisir un créneau"
   (`EventDetailSheet`), onglets + boutons Peut-être/Refuser/Accepter (`InvitationsSheet`),
   bouton de reset dev (`MainCalendarScreen`)
-- [ ] Tester avec VoiceOver (iOS) et TalkBack (Android) — nécessite un test manuel sur device,
-  reporté au cahier de recette (cf. CR-13)
+- Tester avec VoiceOver (iOS) et TalkBack (Android) — reporté au cahier de recette (cf. CR-13) :
+  - [x] TalkBack (Android) — validé par l'utilisateur
+  - [ ] VoiceOver (iOS) — prévu via build EAS installé sur iPhone
 - [x] Chaque phase du cycle a couleur + icône + label texte (pas de dépendance couleur seule) —
   la grille du calendrier principal n'encodait la phase que par la couleur du trait sous chaque
   jour (violation WCAG 1.4.1, palette violet/magenta peu distinguable pour un daltonien) :
