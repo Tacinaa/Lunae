@@ -182,7 +182,7 @@
 - [x] Bottom sheet avec `@gorhom/bottom-sheet`
 - [x] Titre, date, horaire, lieu, calendrier (couleur), notes
 - [x] Indicateur de phase : "Non concerné" OU `[phase] — [recommandation]` — texte aligné sur la maquette Figma ("Incompatible avec la phase du cycle" / "Non concerné avec la phase du cycle") plutôt que le gabarit `[phase] — [recommandation]`
-- [x] Bouton "Voir les suggestions" si phase défavorable + événement déplaçable — remplacé par un bandeau de recommandation affiché directement (pas de bouton intermédiaire), avec "Garder cette date" / "Choisir un créneau" → ouvre un mini-calendrier (jours favorables en surbrillance, événements déjà prévus visibles, jours passés exclus) ; recouvre une bonne partie de l'Écran 13 (v0.4) en version simplifiée côté client, sans passer par `MoveSuggestion`/`RecommendationModule` — voir note sous Écran 13
+- [x] Bouton "Voir les suggestions" si phase défavorable + événement déplaçable — remplacé par un bandeau de recommandation affiché directement (pas de bouton intermédiaire), avec "Garder cette date" / "Choisir un créneau" → ouvre un mini-calendrier (jours favorables en surbrillance, événements déjà prévus visibles, jours passés exclus) ; couvre le besoin de l'Écran 13 (v0.4) en version simplifiée côté client, sans passer par `MoveSuggestion`/`RecommendationModule`. Un rebranchement sur ces endpoints (écran dédié listant les vraies `MoveSuggestion`) a été tenté le 2026-07-14 puis abandonné : l'UX obtenue était nettement moins bonne que ce mini-calendrier — ne pas retenter sans en rediscuter.
 - [x] Bouton "Se désinscrire" pour événements importés — + Supprimer/Modifier pour les événements locaux (hors périmètre TODO initial mais nécessaire pour un CRUD complet ; réutilise `CreateEventModal` en mode édition)
 
 ### Frontend — Écran 15 — Recherche (bottom sheet)
@@ -231,24 +231,6 @@
 - [x] `GET /invitations` — invitations reçues + répondues (liste brute triée par date ; le regroupement par onglet "Reçues"/"Répondues" se fait côté client selon `status`, comme pour les résultats de recherche groupés par date)
 - [x] `PATCH /invitations/:id` — répondre (accepted / declined / maybe)
 
-### Frontend — Écran 13 — Suggestion de déplacement
-> Une version simplifiée existe déjà côté client (v0.3, Écran 12) : bandeau + mini-calendrier
-> avec jours favorables en surbrillance, sans persistance `MoveSuggestion`. Le backend
-> (génération/scoring réel des créneaux, endpoints `/suggestions`) est fait (v0.4), mais l'UI
-> existante ne les consomme toujours pas : le mini-calendrier calcule sa propre surbrillance
-> côté client (table de score dupliquée dans `phaseRecommendation.ts`, uniquement le score max
-> par catégorie — option retenue pour éviter l'ambiguïté visuelle entre deux créneaux "bons"
-> mais de score différent) et la sélection d'un créneau passe par `PATCH /events/:id` direct,
-> pas par `POST /suggestions/:id/accept`. Les `MoveSuggestion` sont donc générées et persistées
-> en base à chaque création/modification d'événement, mais pas encore affichées ni utilisées
-> par l'UI — le travail restant est de brancher l'écran dédié (liste) sur ces endpoints plutôt
-> que de reconstruire la logique de scoring.
-- [ ] Modal/bottom sheet depuis le détail événement
-- [ ] Description de la phase actuelle et pourquoi elle est défavorable
-- [ ] Liste des créneaux alternatifs (date, heure, phase, couleur)
-- [ ] Bouton "Choisir ce créneau" → `POST /suggestions/:id/accept`
-- [ ] Bouton "Garder la date actuelle" → `POST /suggestions/:id/dismiss`
-
 ### Frontend — Écran 14 — Invitations (bottom sheet)
 - [x] Onglets "Reçues" / "Répondues"
 - [x] Pour chaque invitation : titre, date, horaire, boutons Peut-être / Refuser / Accepter
@@ -259,7 +241,17 @@
 ## v1.0 — MVP complet : CI/CD + Déploiement + QA (J+14)
 
 ### Infrastructure
-- [ ] Créer `Dockerfile` pour le backend NestJS (multi-stage build)
+- [x] Créer `Dockerfile` pour le backend NestJS (multi-stage build) — `node:22-slim` (pas Alpine :
+  `bcrypt` a des bindings natifs qui utilisent les binaires prébuilts glibc, évite un build gcc/python
+  sur musl), `openssl` installé explicitement dans les deux stages (Prisma ne détecte pas la libssl
+  sinon, warning au `prisma generate`). Bug latent découvert et corrigé au passage : `nest build`
+  sort dans `dist/src/main.js` (à cause de `sourceRoot: "src"` dans `nest-cli.json`), pas
+  `dist/main.js` — le script `start:prod` du `package.json` pointait au mauvais endroit depuis le
+  début (jamais exécuté avant ce test). Image buildée et testée en conditions réelles : conteneur
+  démarré, connecté à la Postgres locale (`host.docker.internal:5433`), toutes les routes
+  enregistrées, `POST /auth/login` atteint bien la vérification bcrypt puis échoue *volontairement*
+  (SMTP non configuré + `NODE_ENV=production` → `MailService` refuse le fallback console, comportement
+  voulu, pas un bug).
 - [x] Créer `docker-compose.yml` pour développement local (PostgreSQL ; backend pas encore containerisé)
 - [ ] Configurer les variables d'environnement Railway/Render (secrets)
 - [ ] Déployer le backend sur Railway ou Render
@@ -268,13 +260,33 @@
 - [x] Créer `.github/workflows/ci.yml` (mis en place dès v0.1 plutôt qu'à la fin, pour attraper les régressions au fil de l'eau) :
   - [x] Déclenché sur `push` vers `master` et `pull_request`
   - [x] Job `backend` : checkout → `npm ci` → ESLint → Jest (couverture) → Build TS
-  - [ ] Job `frontend` : checkout → `npm ci` → ESLint → Jest (`jest-expo`, couverture) — à ajouter une fois le projet Expo initialisé (v0.2)
+  - [x] Job `frontend` : checkout → `npm ci` → ESLint (`expo lint`, scaffoldé — le projet n'avait
+    aucune config ESLint jusqu'ici) → Jest (`jest-expo`, couverture) → Typecheck. Corrections
+    nécessaires pour un lint propre : apostrophes JSX non échappées (`react/no-unescaped-entities`,
+    remplacées par `’`), variable `code` inutilisée dans `OtpVerificationScreen`. Deux règles
+    désactivées explicitement (voir commentaires dans `eslint.config.js`) : `react-hooks/set-state-in-effect`
+    (faux positif sur le pattern standard `setIsLoading(true)` en tête d'effet de fetch, utilisé
+    partout dans l'app) et `import/no-named-as-default-member` (faux positif connu avec l'export
+    CJS/ESM d'axios sur `axios.create()`/`axios.isAxiosError()`, déjà l'usage documenté correct).
   - [ ] Job `deploy` (dépend de `test`) : build image Docker → push registry → déploiement Railway
 
 ### Qualité et tests
 - [x] Supprimer le boilerplate e2e généré par défaut par `nest new` (`test/app.e2e-spec.ts`, `test/jest-e2e.json`, script `test:e2e`, dépendance `supertest`) — aucun test e2e n'est prévu sur ce projet
-- [ ] Configurer Jest avec rapport de couverture (seuil minimum 80% sur les modules core), backend et frontend
-- [ ] Passer tous les tests unitaires définis en v0.1, v0.2, v0.3 et v0.4 au vert (aucun test e2e prévu — hors scope du projet)
+- [x] Configurer Jest avec rapport de couverture (seuil minimum 80% sur les modules core), backend
+  et frontend — seuils appliqués via `coverageThreshold` (glob par fichier) uniquement sur les
+  modules de logique pure, pas sur l'ensemble du code (les controllers/services qui touchent
+  Prisma/JWT ne sont pas unit-testés par choix, cf. pas d'e2e). Backend : `auth-algorithm.service.ts`,
+  `cycle-algorithm.service.ts`, `recommendation-algorithm.service.ts` — Auth a été refactoré à
+  cette occasion pour extraire ses 4 fonctions pures (`hashPassword`, `validatePassword`,
+  `generateOtp`, `isOtpExpired`), jusque-là dupliquées à la fois comme méthodes de `AuthService`
+  (jamais appelées) et inline dans `register()`/`login()`/`verifyOtp()`/`sendOtp()` — même pattern
+  que `CycleAlgorithmService`/`RecommendationAlgorithmService`, `auth.service.spec.ts` remplacé par
+  `auth-algorithm.service.spec.ts`. Frontend : `calendarGrid.ts`, `phaseRecommendation.ts`,
+  `theme.ts`, `onboarding.ts` (test manquant sur `resetOnboardingSeen()` ajouté au passage),
+  `authStore.ts`, `cycleStore.ts`, `useDebouncedValue.ts`. Seuils vérifiés fonctionnels (testé
+  qu'un seuil intentionnellement cassé fait échouer `test:cov`, pas juste silencieusement ignoré).
+- [x] Passer tous les tests unitaires définis en v0.1, v0.2, v0.3 et v0.4 au vert (aucun test e2e
+  prévu — hors scope du projet) — 37 tests backend, 41 tests frontend, tous verts
 - [ ] Cahier de recette — vérifier manuellement CR-01 à CR-12 :
   - [ ] CR-01 : Inscription email valide → OTP reçu
   - [ ] CR-02 : Email déjà utilisé → erreur claire
@@ -291,15 +303,44 @@
 
 ### Accessibilité (WCAG AA)
 - [x] Vérifier ratio de contraste violet #6B3FA0 sur fond blanc (≥ 4.5:1) — 7.38:1, conforme (calcul luminance relative WCAG). Au passage, couleurs de phase vérifiées aussi (`utils/theme.ts`) : traits de phase 4.10–12.99:1 vs blanc (seuil 3:1 non-textuel), contour du jour suggéré 4.10:1
-- [ ] Ajouter `accessibilityLabel` sur tous les boutons et éléments interactifs
-- [ ] Vérifier tailles de zones tactiles ≥ 44×44 dp
-- [ ] Tester avec VoiceOver (iOS) et TalkBack (Android)
-- [ ] Chaque phase du cycle a couleur + icône + label texte (pas de dépendance couleur seule)
+- [x] Ajouter `accessibilityLabel` sur tous les boutons et éléments interactifs — audit fait sur
+  tous les écrans/composants (comparaison nombre de `<Pressable>` vs `accessibilityLabel` par
+  fichier) ; seul manque trouvé : les deux onglets Reçues/Répondues d'`InvitationsSheet`, corrigé
+- [x] Vérifier tailles de zones tactiles ≥ 44×44 dp — 9 zones sous le seuil trouvées et corrigées
+  (36–40dp → 44dp) : chips de catégorie (`CreateEventModal`), flèches de navigation du
+  mini-calendrier (`EventDatePicker`), boutons "Garder cette date"/"Choisir un créneau"
+  (`EventDetailSheet`), onglets + boutons Peut-être/Refuser/Accepter (`InvitationsSheet`),
+  bouton de reset dev (`MainCalendarScreen`)
+- [ ] Tester avec VoiceOver (iOS) et TalkBack (Android) — nécessite un test manuel sur device,
+  reporté au cahier de recette
+- [x] Chaque phase du cycle a couleur + icône + label texte (pas de dépendance couleur seule) —
+  la grille du calendrier principal n'encodait la phase que par la couleur du trait sous chaque
+  jour (violation WCAG 1.4.1, palette violet/magenta peu distinguable pour un daltonien).
+  Décision validée avec l'utilisateur : `accessibilityLabel` du jour enrichi avec le nom de la
+  phase ("9 juillet, phase menstruation") plutôt qu'un repère visuel supplémentaire (pointillé/
+  icône) — résout le cas lecteur d'écran (VoiceOver/TalkBack), pas le cas daltonien sighted sans
+  lecteur d'écran ; accepté comme compromis pour le MVP, à revoir si besoin identifié en usage réel.
 
 ### RGPD
-- [ ] Ajouter `DELETE /users/me` → suppression en cascade de toutes les données
-- [ ] Écran de consentement explicite lors de l'onboarding (avant la saisie du cycle)
-- [ ] Vérifier le chiffrement des colonnes de données de cycle en BDD
+- [x] Ajouter `DELETE /users/me` → suppression en cascade de toutes les données (toutes les
+  relations du schéma ont `onDelete: Cascade` depuis `User` — une seule suppression suffit ;
+  vérifié manuellement : cycles/événements/invitations/suggestions bien effacés)
+- [x] Écran de consentement explicite lors de l'onboarding (avant la saisie du cycle) —
+  `ConsentScreen`, premier écran d'`OnboardingSetupNavigator` (avant `CycleSetup`) : case à
+  cocher décochée par défaut (consentement explicite, pas de pré-cochage), bouton "Continuer"
+  désactivé tant qu'elle n'est pas cochée. Pas de persistance backend d'un enregistrement de
+  consentement (pas de modèle dédié en base) — hors scope MVP, cf. Backlog si nécessaire pour
+  la certification.
+- [x] Chiffrement des données de cycle en BDD — `notes` de `CycleEntry` chiffré en AES-256-GCM
+  applicatif (`cycle-encryption.util.ts`, clé `CYCLE_DATA_ENCRYPTION_KEY`), seul champ libre
+  jamais trié/calculé. `startDate`/`cycleLength`/`periodDuration` restent en clair en base : ils
+  sont triés (`orderBy: startDate`) et utilisés dans des calculs arithmétiques
+  (`predictNextPeriod`), incompatibles avec un chiffrement au niveau champ sans déchiffrer tout
+  l'historique en mémoire à chaque appel. Décision d'architecture délibérée : leur protection au
+  repos est déléguée au chiffrement de l'infrastructure (disque du Postgres managé
+  Railway/Render, standard sur ce type d'hébergement) plutôt qu'à un chiffrement applicatif qui
+  casserait le tri et la prédiction pour un gain de sécurité marginal. À documenter comme tel
+  dans le dossier de certification (grille C2.2.3).
 
 ### Build Expo
 - [ ] Configurer `eas.json` pour EAS Build (profiles development, preview, production)
