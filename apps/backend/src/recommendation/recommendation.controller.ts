@@ -1,5 +1,8 @@
 import { Controller, Get, Param, Post } from '@nestjs/common';
-import { CurrentUser, type JwtUser } from '../auth/decorators/current-user.decorator.js';
+import {
+  CurrentUser,
+  type JwtUser,
+} from '../auth/decorators/current-user.decorator.js';
 import { RecommendationService } from './recommendation.service.js';
 
 @Controller('suggestions')

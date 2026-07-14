@@ -42,7 +42,11 @@ export class RecommendationService {
       }),
     ]);
 
-    const candidates = this.algo.generateSuggestions(event, phases, existingEvents);
+    const candidates = this.algo.generateSuggestions(
+      event,
+      phases,
+      existingEvents,
+    );
     if (candidates.length === 0) return;
 
     await this.prisma.moveSuggestion.createMany({
@@ -91,7 +95,9 @@ export class RecommendationService {
   }
 
   private async findOwned(userId: string, id: string) {
-    const suggestion = await this.prisma.moveSuggestion.findUnique({ where: { id } });
+    const suggestion = await this.prisma.moveSuggestion.findUnique({
+      where: { id },
+    });
     if (!suggestion || suggestion.userId !== userId) {
       throw new NotFoundException('Suggestion introuvable');
     }

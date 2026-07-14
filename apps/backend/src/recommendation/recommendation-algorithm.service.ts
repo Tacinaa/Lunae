@@ -41,13 +41,24 @@ const GENERIC_PHASE_SCORES: Record<Phase, number> = {
  * cycle. À terme, ces tables seront remplacées/pondérées par un scoring
  * personnalisé basé sur les symptômes déclarés (backlog post-MVP).
  */
-const CATEGORY_PHASE_SCORES: Partial<Record<EventType, Record<Phase, number>>> = {
-  sport_intense: { menstruation: 0, follicular: 2, ovulation: 3, luteal: 1 },
-  sport_leger: { menstruation: 3, follicular: 1, ovulation: 1, luteal: 2 },
-  focus_administratif: { menstruation: 1, follicular: 2, ovulation: 1, luteal: 3 },
-  creation_planification: { menstruation: 1, follicular: 3, ovulation: 2, luteal: 1 },
-  social_enjeu: { menstruation: 0, follicular: 2, ovulation: 3, luteal: 1 },
-};
+const CATEGORY_PHASE_SCORES: Partial<Record<EventType, Record<Phase, number>>> =
+  {
+    sport_intense: { menstruation: 0, follicular: 2, ovulation: 3, luteal: 1 },
+    sport_leger: { menstruation: 3, follicular: 1, ovulation: 1, luteal: 2 },
+    focus_administratif: {
+      menstruation: 1,
+      follicular: 2,
+      ovulation: 1,
+      luteal: 3,
+    },
+    creation_planification: {
+      menstruation: 1,
+      follicular: 3,
+      ovulation: 2,
+      luteal: 1,
+    },
+    social_enjeu: { menstruation: 0, follicular: 2, ovulation: 3, luteal: 1 },
+  };
 
 @Injectable()
 export class RecommendationAlgorithmService {
@@ -61,9 +72,15 @@ export class RecommendationAlgorithmService {
     return Math.max(...Object.values(table));
   }
 
-  shouldSuggestMove(event: RecommendableEvent, currentPhase: Phase | null): boolean {
+  shouldSuggestMove(
+    event: RecommendableEvent,
+    currentPhase: Phase | null,
+  ): boolean {
     if (!event.isMovable || !currentPhase) return false;
-    return this.scoreForPhase(event.eventType, currentPhase) < this.maxScore(event.eventType);
+    return (
+      this.scoreForPhase(event.eventType, currentPhase) <
+      this.maxScore(event.eventType)
+    );
   }
 
   generateSuggestions(

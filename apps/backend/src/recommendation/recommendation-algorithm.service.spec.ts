@@ -17,7 +17,9 @@ function addDays(date: Date, days: number): Date {
   return result;
 }
 
-function makeEvent(overrides: Partial<RecommendableEvent> = {}): RecommendableEvent {
+function makeEvent(
+  overrides: Partial<RecommendableEvent> = {},
+): RecommendableEvent {
   const startAt = overrides.startAt ?? addDays(startOfToday(), 1);
   return {
     id: 'evt-1',
@@ -38,23 +40,37 @@ describe('RecommendationAlgorithmService', () => {
 
   describe('scoreForPhase()', () => {
     it('sport_intense — optimal en ovulation, déconseillé en menstruation', () => {
-      expect(service.scoreForPhase(EventType.sport_intense, Phase.ovulation)).toBe(3);
-      expect(service.scoreForPhase(EventType.sport_intense, Phase.menstruation)).toBe(0);
+      expect(
+        service.scoreForPhase(EventType.sport_intense, Phase.ovulation),
+      ).toBe(3);
+      expect(
+        service.scoreForPhase(EventType.sport_intense, Phase.menstruation),
+      ).toBe(0);
     });
 
     it('sport_leger — optimal en menstruation, contrairement au sport intense', () => {
-      expect(service.scoreForPhase(EventType.sport_leger, Phase.menstruation)).toBe(3);
-      expect(service.scoreForPhase(EventType.sport_leger, Phase.ovulation)).toBe(1);
+      expect(
+        service.scoreForPhase(EventType.sport_leger, Phase.menstruation),
+      ).toBe(3);
+      expect(
+        service.scoreForPhase(EventType.sport_leger, Phase.ovulation),
+      ).toBe(1);
     });
 
     it('focus_administratif — optimal en lutéale, pas en ovulation', () => {
-      expect(service.scoreForPhase(EventType.focus_administratif, Phase.luteal)).toBe(3);
-      expect(service.scoreForPhase(EventType.focus_administratif, Phase.ovulation)).toBe(1);
+      expect(
+        service.scoreForPhase(EventType.focus_administratif, Phase.luteal),
+      ).toBe(3);
+      expect(
+        service.scoreForPhase(EventType.focus_administratif, Phase.ovulation),
+      ).toBe(1);
     });
 
     it('catégorie neutre (meeting) — retombe sur la table générique', () => {
       expect(service.scoreForPhase(EventType.meeting, Phase.ovulation)).toBe(3);
-      expect(service.scoreForPhase(EventType.meeting, Phase.menstruation)).toBe(0);
+      expect(service.scoreForPhase(EventType.meeting, Phase.menstruation)).toBe(
+        0,
+      );
     });
   });
 
@@ -70,7 +86,10 @@ describe('RecommendationAlgorithmService', () => {
 
   describe('shouldSuggestMove()', () => {
     it('isMovable=false → false, même en phase déconseillée', () => {
-      const event = makeEvent({ isMovable: false, eventType: EventType.sport_intense });
+      const event = makeEvent({
+        isMovable: false,
+        eventType: EventType.sport_intense,
+      });
       expect(service.shouldSuggestMove(event, Phase.menstruation)).toBe(false);
     });
 
@@ -136,13 +155,17 @@ describe('RecommendationAlgorithmService', () => {
         }),
       ];
 
-      const candidates = service.generateSuggestions(event, phaseCalendar, existingEvents);
+      const candidates = service.generateSuggestions(
+        event,
+        phaseCalendar,
+        existingEvents,
+      );
 
       expect(candidates).toHaveLength(1);
       expect(candidates[0].phase).toBe(Phase.follicular);
     });
 
-    it('exclut les jours passés et le jour d\'origine de l\'événement', () => {
+    it("exclut les jours passés et le jour d'origine de l'événement", () => {
       const today = startOfToday();
       const event = makeEvent({
         eventType: EventType.sport_intense,
@@ -157,7 +180,9 @@ describe('RecommendationAlgorithmService', () => {
       const candidates = service.generateSuggestions(event, phaseCalendar, []);
 
       expect(candidates).toHaveLength(1);
-      expect(candidates[0].start.getUTCDate()).toBe(addDays(today, 5).getUTCDate());
+      expect(candidates[0].start.getUTCDate()).toBe(
+        addDays(today, 5).getUTCDate(),
+      );
     });
   });
 });
