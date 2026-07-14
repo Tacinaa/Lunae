@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard.js';
 import { CalendarModule } from './calendar/calendar.module.js';
 import { CycleModule } from './cycle/cycle.module.js';
+import { InvitationModule } from './invitation/invitation.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RecommendationModule } from './recommendation/recommendation.module.js';
 import { UserModule } from './user/user.module.js';
@@ -20,6 +21,7 @@ import { UserModule } from './user/user.module.js';
     CycleModule,
     RecommendationModule,
     CalendarModule,
+    InvitationModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
 })

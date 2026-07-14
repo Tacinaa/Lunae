@@ -227,9 +227,9 @@
   - [x] `generateSuggestions()` — exclut les créneaux déjà occupés, les jours passés et le jour d'origine
 
 ### Backend — Module Invitation
-- [ ] Générer `InvitationModule`, `InvitationService`, `InvitationController`
-- [ ] `GET /invitations` — invitations reçues + répondues
-- [ ] `PATCH /invitations/:id` — répondre (accepted / declined / maybe)
+- [x] Générer `InvitationModule`, `InvitationService`, `InvitationController`
+- [x] `GET /invitations` — invitations reçues + répondues (liste brute triée par date ; le regroupement par onglet "Reçues"/"Répondues" se fait côté client selon `status`, comme pour les résultats de recherche groupés par date)
+- [x] `PATCH /invitations/:id` — répondre (accepted / declined / maybe)
 
 ### Frontend — Écran 13 — Suggestion de déplacement
 > Une version simplifiée existe déjà côté client (v0.3, Écran 12) : bandeau + mini-calendrier
@@ -250,9 +250,9 @@
 - [ ] Bouton "Garder la date actuelle" → `POST /suggestions/:id/dismiss`
 
 ### Frontend — Écran 14 — Invitations (bottom sheet)
-- [ ] Onglets "Reçues" / "Répondues"
-- [ ] Pour chaque invitation : titre, date, horaire, boutons Peut-être / Refuser / Accepter
-- [ ] Appel `PATCH /invitations/:id` au tap
+- [x] Onglets "Reçues" / "Répondues"
+- [x] Pour chaque invitation : titre, date, horaire, boutons Peut-être / Refuser / Accepter
+- [x] Appel `PATCH /invitations/:id` au tap
 
 ---
 

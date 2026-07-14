@@ -7,6 +7,7 @@ import { getCalendars, getEvents, type CalendarDto, type EventDto } from '../../
 import { getPhasesInRange } from '../../api/cycle';
 import { CreateEventModal } from '../../components/CreateEventModal';
 import { EventDetailSheet } from '../../components/EventDetailSheet';
+import { InvitationsSheet } from '../../components/InvitationsSheet';
 import { SearchSheet } from '../../components/SearchSheet';
 import type { AppStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/authStore';
@@ -47,6 +48,7 @@ export function MainCalendarScreen(_props: Props) {
   const [editFocusDate, setEditFocusDate] = useState(false);
   const [detailEvent, setDetailEvent] = useState<EventDto | null>(null);
   const [showSearch, setShowSearch] = useState(false);
+  const [showInvitations, setShowInvitations] = useState(false);
   const logout = useAuthStore((state) => state.logout);
 
   const weeks = useMemo(() => getMonthMatrix(visibleYear, visibleMonth), [visibleYear, visibleMonth]);
@@ -163,7 +165,12 @@ export function MainCalendarScreen(_props: Props) {
           >
             <Ionicons name="search" size={26} color={colors.text} />
           </Pressable>
-          <Pressable style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Invitations">
+          <Pressable
+            style={styles.iconButton}
+            onPress={() => setShowInvitations(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Invitations"
+          >
             <Ionicons name="mail-outline" size={26} color={colors.text} />
           </Pressable>
           <Pressable style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Paramètres">
@@ -359,6 +366,8 @@ export function MainCalendarScreen(_props: Props) {
           setDetailEvent(event);
         }}
       />
+
+      <InvitationsSheet visible={showInvitations} onClose={() => setShowInvitations(false)} />
     </SafeAreaView>
   );
 }

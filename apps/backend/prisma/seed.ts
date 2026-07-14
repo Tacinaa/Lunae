@@ -1,4 +1,4 @@
-import { Phase, PrismaClient } from '@prisma/client';
+import { InvitationStatus, Phase, PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -160,8 +160,31 @@ async function main() {
     })),
   });
 
+  // Invitations de démo : rattachées à des événements sociaux déjà seedés, pour peupler les
+  // onglets Reçues (pending) et Répondues (accepted/declined/maybe) de l'Écran 14, sans avoir
+  // à modéliser un second utilisateur organisateur.
+  const INVITATION_SEEDS: { title: string; status: InvitationStatus }[] = [
+    { title: 'Anniversaire de Camille', status: InvitationStatus.pending },
+    { title: 'Cinéma avec Julie et les copines', status: InvitationStatus.pending },
+    { title: 'Déjeuner avec Sarah', status: InvitationStatus.accepted },
+    { title: 'Weekend chez mes parents', status: InvitationStatus.declined },
+  ];
+
+  const invitationEvents = await prisma.event.findMany({
+    where: { userId: user.id, title: { in: INVITATION_SEEDS.map((i) => i.title) } },
+  });
+
+  await prisma.invitation.createMany({
+    data: INVITATION_SEEDS.map((seed) => ({
+      eventId: invitationEvents.find((e) => e.title === seed.title)!.id,
+      userId: user.id,
+      status: seed.status,
+    })),
+  });
+
   console.log(`Utilisateur de démo prêt : ${TEST_EMAIL} / ${TEST_PASSWORD}`);
   console.log(`${DEMO_EVENTS.length} événements + 3 cycles (${phases.length} jours de phase) créés.`);
+  console.log(`${INVITATION_SEEDS.length} invitations de démo créées.`);
   console.log('Le code OTP de connexion sera affiché dans les logs du backend (SMTP non configuré).');
 }
 
