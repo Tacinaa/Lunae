@@ -7,15 +7,15 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { randomInt, randomUUID } from 'crypto';
+import { randomUUID } from 'crypto';
 import type { StringValue } from 'ms';
 import { OtpType } from '@prisma/client';
 import { MailService } from '../mail/mail.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { AuthAlgorithmService } from './auth-algorithm.service.js';
 import type { LoginDto } from './dto/login.dto.js';
 import type { RegisterDto } from './dto/register.dto.js';
 
-const BCRYPT_ROUNDS = 12;
 const OTP_ROUNDS = 10;
 const OTP_TTL_MINUTES = 10;
 const REFRESH_TTL_DAYS = 30;
@@ -27,6 +27,7 @@ export class AuthService {
     private jwt: JwtService,
     private mail: MailService,
     private config: ConfigService,
+    private algo: AuthAlgorithmService,
   ) {}
 
   async register(dto: RegisterDto): Promise<{ message: string }> {
@@ -35,7 +36,7 @@ export class AuthService {
     });
     if (existing) throw new ConflictException('Email déjà utilisé');
 
-    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
+    const passwordHash = await this.algo.hashPassword(dto.password);
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
@@ -60,7 +61,10 @@ export class AuthService {
     if (!user?.passwordHash)
       throw new UnauthorizedException('Identifiants invalides');
 
-    const valid = await bcrypt.compare(dto.password, user.passwordHash);
+    const valid = await this.algo.validatePassword(
+      dto.password,
+      user.passwordHash,
+    );
     if (!valid) throw new UnauthorizedException('Identifiants invalides');
 
     await this.sendOtp(user.id, user.email, OtpType.login);
@@ -81,7 +85,7 @@ export class AuthService {
     });
 
     if (!otp) throw new UnauthorizedException('Code invalide ou expiré');
-    if (otp.expiresAt < new Date())
+    if (this.algo.isOtpExpired(otp.expiresAt))
       throw new UnauthorizedException('Code expiré');
 
     const valid = await bcrypt.compare(code, otp.code);
@@ -122,22 +126,6 @@ export class AuthService {
     return { message: 'Nouveau code envoyé' };
   }
 
-  generateOtp(): string {
-    return randomInt(100000, 999999).toString();
-  }
-
-  async hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, BCRYPT_ROUNDS);
-  }
-
-  async validatePassword(password: string, hash: string): Promise<boolean> {
-    return bcrypt.compare(password, hash);
-  }
-
-  isOtpExpired(expiresAt: Date): boolean {
-    return expiresAt < new Date();
-  }
-
   private signAccessToken(userId: string, email: string): string {
     const expiresIn = this.config.get<string>('JWT_ACCESS_EXPIRES_IN', '15m');
 
@@ -173,7 +161,7 @@ export class AuthService {
     email: string,
     type: OtpType,
   ): Promise<void> {
-    const code = this.generateOtp();
+    const code = this.algo.generateOtp();
     const codeHash = await bcrypt.hash(code, OTP_ROUNDS);
     const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
 

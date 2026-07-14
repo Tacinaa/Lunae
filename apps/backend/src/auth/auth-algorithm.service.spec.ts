@@ -1,17 +1,11 @@
-jest.mock('../prisma/prisma.service.js');
-jest.mock('../mail/mail.service.js');
-
 import * as bcrypt from 'bcrypt';
-import { AuthService } from './auth.service.js';
+import { AuthAlgorithmService } from './auth-algorithm.service.js';
 
-const makeService = () =>
-  new AuthService(null as never, null as never, null as never, null as never);
-
-describe('AuthService — logique pure', () => {
-  let service: AuthService;
+describe('AuthAlgorithmService', () => {
+  let service: AuthAlgorithmService;
 
   beforeEach(() => {
-    service = makeService();
+    service = new AuthAlgorithmService();
   });
 
   describe('generateOtp()', () => {
