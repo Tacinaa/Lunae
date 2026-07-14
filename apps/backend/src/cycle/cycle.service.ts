@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import type { CycleEntry } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CycleAlgorithmService } from './cycle-algorithm.service.js';
+import { decryptCycleNote, encryptCycleNote } from './cycle-encryption.util.js';
 import type { CreateCycleDto } from './dto/create-cycle.dto.js';
 
 @Injectable()
@@ -12,7 +14,13 @@ export class CycleService {
 
   async create(userId: string, dto: CreateCycleDto) {
     const entry = await this.prisma.cycleEntry.create({
-      data: { userId, ...dto },
+      data: {
+        userId,
+        startDate: dto.startDate,
+        cycleLength: dto.cycleLength,
+        periodDuration: dto.periodDuration,
+        notes: dto.notes ? encryptCycleNote(dto.notes) : dto.notes,
+      },
     });
 
     const phases = this.algo.calculatePhases(
@@ -31,14 +39,22 @@ export class CycleService {
       skipDuplicates: true,
     });
 
-    return entry;
+    return this.withDecryptedNotes(entry);
   }
 
   async findAll(userId: string) {
-    return this.prisma.cycleEntry.findMany({
+    const entries = await this.prisma.cycleEntry.findMany({
       where: { userId },
       orderBy: { startDate: 'desc' },
     });
+    return entries.map((entry) => this.withDecryptedNotes(entry));
+  }
+
+  private withDecryptedNotes(entry: CycleEntry): CycleEntry {
+    return {
+      ...entry,
+      notes: entry.notes ? decryptCycleNote(entry.notes) : entry.notes,
+    };
   }
 
   async getCurrentPhase(userId: string) {
