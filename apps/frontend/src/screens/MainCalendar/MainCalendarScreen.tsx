@@ -21,6 +21,7 @@ import {
 } from '../../utils/calendarGrid';
 import { getErrorMessage } from '../../utils/errors';
 import { resetOnboardingSeen } from '../../utils/onboarding';
+import { PHASE_LABELS } from '../../utils/phaseRecommendation';
 import { colors, getPhaseColor, hexToRgba } from '../../utils/theme';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'MainCalendar'>;
@@ -29,6 +30,11 @@ const TITLE_MAX_CHARS = 12;
 
 function truncate(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+}
+
+function dayAccessibilityLabel(day: Date, phase: Phase | undefined): string {
+  const dateLabel = day.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+  return phase ? `${dateLabel}, phase ${PHASE_LABELS[phase]}` : dateLabel;
 }
 
 export function MainCalendarScreen(_props: Props) {
@@ -224,7 +230,11 @@ export function MainCalendarScreen(_props: Props) {
 
               return (
                 <View key={dateKey} style={[styles.dayCell, !isCurrentMonth && styles.dayCellOutside]}>
-                  <View style={[styles.dayNumberWrap, isToday && styles.todayCircle]}>
+                  <View
+                    style={[styles.dayNumberWrap, isToday && styles.todayCircle]}
+                    accessible
+                    accessibilityLabel={dayAccessibilityLabel(day, phase)}
+                  >
                     <Text
                       style={[
                         styles.dayNumber,
@@ -295,7 +305,7 @@ export function MainCalendarScreen(_props: Props) {
           accessibilityRole="button"
           accessibilityLabel="Aujourd'hui"
         >
-          <Text style={styles.bottomButtonText}>Aujourd'hui</Text>
+          <Text style={styles.bottomButtonText}>Aujourd’hui</Text>
         </Pressable>
         <Pressable
           style={styles.bottomButton}
@@ -472,7 +482,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     bottom: 84,
-    minHeight: 36,
+    minHeight: 44,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,

@@ -35,9 +35,7 @@ export function OtpVerificationScreen({ route, navigation }: Props) {
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
-  const inputRefs = useRef<Array<TextInput | null>>([]);
-
-  const code = digits.join('');
+  const inputRefs = useRef<(TextInput | null)[]>([]);
 
   const handleChangeDigit = (value: string, index: number) => {
     const sanitized = value.replace(/[^0-9]/g, '').slice(-1);

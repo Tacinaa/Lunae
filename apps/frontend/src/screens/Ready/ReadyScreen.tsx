@@ -15,7 +15,7 @@ export function ReadyScreen(_props: Props) {
       <Text style={styles.emoji}>🌙 ✨</Text>
       <Text style={styles.title}>Tout est prêt !</Text>
       <Text style={styles.text}>
-        Votre agenda Lunae est configuré. On s'occupe du reste.
+        Votre agenda Lunae est configuré. On s’occupe du reste.
       </Text>
 
       <Pressable

@@ -29,7 +29,7 @@ export function CalendarPermissionScreen({ navigation }: Props) {
       <Text style={styles.title}>Autorisation calendrier</Text>
       <Text style={styles.text}>
         Lunae peut importer vos calendriers existants pour vous proposer les meilleurs créneaux
-        selon votre cycle. Vous pourrez choisir quels calendriers importer à l'étape suivante.
+        selon votre cycle. Vous pourrez choisir quels calendriers importer à l’étape suivante.
       </Text>
 
       <Pressable
@@ -42,7 +42,7 @@ export function CalendarPermissionScreen({ navigation }: Props) {
         {isRequesting ? (
           <ActivityIndicator color="#FFFFFF" />
         ) : (
-          <Text style={styles.buttonText}>Autoriser l'accès</Text>
+          <Text style={styles.buttonText}>Autoriser l’accès</Text>
         )}
       </Pressable>
     </SafeAreaView>

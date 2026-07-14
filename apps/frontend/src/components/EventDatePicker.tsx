@@ -208,7 +208,7 @@ export function EventDatePicker({
 const styles = StyleSheet.create({
   container: { marginBottom: 16 },
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  navButton: { minWidth: 36, minHeight: 36, alignItems: 'center', justifyContent: 'center' },
+  navButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   navButtonText: { fontSize: 18, color: colors.primary, fontWeight: '600' },
   navLabel: { fontSize: 14, fontWeight: '700', color: colors.text, marginHorizontal: 8 },
   weekdayRow: { flexDirection: 'row' },

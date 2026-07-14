@@ -130,6 +130,7 @@ export function InvitationsSheet({ visible, onClose }: Props) {
             onPress={() => setTab('received')}
             accessibilityRole="tab"
             accessibilityState={{ selected: tab === 'received' }}
+            accessibilityLabel="Invitations reçues"
           >
             <Text style={[styles.tabText, tab === 'received' && styles.tabTextActive]}>Reçues</Text>
           </Pressable>
@@ -138,6 +139,7 @@ export function InvitationsSheet({ visible, onClose }: Props) {
             onPress={() => setTab('answered')}
             accessibilityRole="tab"
             accessibilityState={{ selected: tab === 'answered' }}
+            accessibilityLabel="Invitations répondues"
           >
             <Text style={[styles.tabText, tab === 'answered' && styles.tabTextActive]}>Répondues</Text>
           </Pressable>
@@ -233,7 +235,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    minHeight: 36,
+    minHeight: 44,
     borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
@@ -259,7 +261,7 @@ const styles = StyleSheet.create({
   actionsRow: { flexDirection: 'row', gap: 8 },
   maybeButton: {
     flex: 1,
-    minHeight: 40,
+    minHeight: 44,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.textMuted,
@@ -269,7 +271,7 @@ const styles = StyleSheet.create({
   maybeButtonText: { fontSize: 12.5, color: colors.textMuted, fontWeight: '600' },
   declineButton: {
     flex: 1,
-    minHeight: 40,
+    minHeight: 44,
     borderRadius: 10,
     backgroundColor: colors.danger,
     alignItems: 'center',
@@ -278,7 +280,7 @@ const styles = StyleSheet.create({
   declineButtonText: { fontSize: 12.5, color: '#FFFFFF', fontWeight: '600' },
   acceptButton: {
     flex: 1,
-    minHeight: 40,
+    minHeight: 44,
     borderRadius: 10,
     backgroundColor: colors.primary,
     alignItems: 'center',

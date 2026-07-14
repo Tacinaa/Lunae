@@ -95,7 +95,7 @@ export function EventDetailSheet({ event, phase, onClose, onEdit, onChooseSlot, 
                 <Text style={styles.bannerText}>
                   Nous vous recommandons de déplacer{' '}
                   <Text style={styles.bannerTextBold}>{event.title}</Text> : la phase{' '}
-                  {phase ? PHASE_LABELS[phase] : ''} n'est pas idéale pour un événement de type{' '}
+                  {phase ? PHASE_LABELS[phase] : ''} n’est pas idéale pour un événement de type{' '}
                   {CATEGORY_LABELS[event.eventType]}.
                 </Text>
                 <View style={styles.bannerActions}>
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   bannerActions: { flexDirection: 'row', gap: 10 },
   bannerIgnoreButton: {
     flex: 1,
-    minHeight: 36,
+    minHeight: 44,
     borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.textMuted,
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   bannerIgnoreText: { fontSize: 13, color: colors.textMuted, fontWeight: '600' },
   bannerMoveButton: {
     flex: 1,
-    minHeight: 36,
+    minHeight: 44,
     borderRadius: 18,
     backgroundColor: colors.primary,
     alignItems: 'center',

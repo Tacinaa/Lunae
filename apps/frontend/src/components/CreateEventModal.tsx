@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   categorySection: { marginBottom: 16 },
   categoryChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   categoryChip: {
-    minHeight: 36,
+    minHeight: 44,
     paddingHorizontal: 14,
     borderRadius: 18,
     borderWidth: 1,
