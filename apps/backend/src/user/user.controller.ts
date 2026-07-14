@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Patch } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Patch,
+} from '@nestjs/common';
 import {
   CurrentUser,
   type JwtUser,
@@ -18,5 +26,11 @@ export class UserController {
   @Patch('me')
   updateMe(@CurrentUser() user: JwtUser, @Body() dto: UpdateUserDto) {
     return this.user.updateMe(user.userId, dto);
+  }
+
+  @Delete('me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteMe(@CurrentUser() user: JwtUser) {
+    return this.user.deleteMe(user.userId);
   }
 }

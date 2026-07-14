@@ -31,4 +31,11 @@ export class UserService {
       select: USER_SELECT,
     });
   }
+
+  async deleteMe(userId: string): Promise<void> {
+    // Toutes les relations (cycle, calendriers, événements, suggestions, invitations,
+    // refresh tokens, OTP) ont onDelete: Cascade côté schéma — une seule suppression
+    // de l'utilisateur suffit à effacer l'intégralité de ses données (RGPD).
+    await this.prisma.user.delete({ where: { id: userId } });
+  }
 }
