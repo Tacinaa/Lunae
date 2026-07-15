@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   weekdayRow: { flexDirection: 'row' },
   weekdayLabel: { flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '600', color: colors.textMuted },
   weekRow: { flexDirection: 'row' },
-  dayCell: { flex: 1, alignItems: 'center', paddingVertical: 2 },
+  dayCell: { flex: 1, alignItems: 'center', paddingVertical: 3 },
   dayCircleWrap: {
     width: 30,
     height: 30,

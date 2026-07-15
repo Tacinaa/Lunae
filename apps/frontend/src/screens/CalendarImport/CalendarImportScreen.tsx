@@ -226,9 +226,9 @@ const styles = StyleSheet.create({
   },
   providerLabel: { fontSize: 15, color: colors.text },
   addButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -294,8 +294,8 @@ const styles = StyleSheet.create({
   },
   importedLabel: { fontSize: 15, color: colors.text },
   removeButton: {
-    width: 32,
-    height: 32,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },

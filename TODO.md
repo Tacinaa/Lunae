@@ -381,7 +381,11 @@
   (36–40dp → 44dp) : chips de catégorie (`CreateEventModal`), flèches de navigation du
   mini-calendrier (`EventDatePicker`), boutons "Garder cette date"/"Choisir un créneau"
   (`EventDetailSheet`), onglets + boutons Peut-être/Refuser/Accepter (`InvitationsSheet`),
-  bouton de reset dev (`MainCalendarScreen`)
+  bouton de reset dev (`MainCalendarScreen`). Ré-audit du 2026-07-15 (déclenché par l'ajout du
+  formulaire Apple Calendar) : 2 zones supplémentaires sous le seuil trouvées et corrigées —
+  boutons +/− et × (`CalendarImportScreen`, `addButton`/`removeButton`), 32×32dp → 44×44dp ;
+  cases du mini-calendrier (`EventDatePicker`, `dayCell`), hauteur réelle 42dp → 44dp
+  (`paddingVertical` 2 → 3)
 - Tester avec VoiceOver (iOS) et TalkBack (Android) — reporté au cahier de recette (cf. CR-13) :
   - [x] TalkBack (Android) — validé par l'utilisateur
   - [ ] VoiceOver (iOS) — bloqué par l'absence de SDK 57 sur Expo Go iOS (App Store), reporté au
