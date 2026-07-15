@@ -172,8 +172,16 @@
   `EventService.create()` pour ne pas déclencher une suggestion par événement importé).
   `isMovable: false` sur tous les événements importés (pas d'écriture vers Google en MVP). Mapping
   Google → `Event` extrait en fonction pure testée (`google-calendar-event-mapper.ts`, 14 tests).
-  Implémentation posée le 2026-07-15, vérification manuelle bout-en-bout (cf. CR-09) en attente de
-  la config Google Cloud Console côté utilisateur.
+  Implémentation posée le 2026-07-15, vérifiée manuellement bout-en-bout le jour même (cf. CR-09) :
+  build dev-client via EAS Build cloud (pas de SDK Android local sur la machine de développement),
+  consentement Google réel, calendrier et événements importés visibles dans l'app, ré-import
+  idempotent (pas de doublon). Deux ajustements faits en cours de route : le client OAuth Android
+  refuse par défaut les redirections vers un schéma d'URI personnalisé ("custom URI scheme is not
+  enabled") — activé explicitement dans les paramètres avancés du client Android (propagation
+  Google ~5-15 min) plutôt que de basculer vers un client "Web application" ; et le schéma
+  `com.lunae.app` (celui utilisé par défaut par `expo-auth-session` pour la redirection) ajouté à
+  `app.json` — seul `lunae` y était déclaré, donc aucun intent-filter Android ne correspondait à la
+  redirection OAuth, qui retombait sur la page d'accueil Google au lieu de revenir dans l'app.
 - [ ] `POST /calendars/import/apple` — CalDAV Apple → stocker credentials + sync initiale
 - [ ] `POST /calendars/import/microsoft` — OAuth2 Microsoft → stocker token + sync initiale
 - [ ] `POST /calendars/:id/sync` — synchronisation incrémentale (syncToken)
@@ -182,16 +190,16 @@
 - [x] Grille mensuelle custom (ou `react-native-calendars`) — implémentation custom (`utils/calendarGrid.ts`), pas de dépendance ajoutée
 - [x] Navigation mois précédent / suivant
 - [x] Aujourd'hui cerclé en violet
-- [x] Bandes de couleur horizontales par semaine selon la phase (`GET /cycle/phases?from=&to=`) — trait fin en bas de chaque cellule, coloré par phase (jours consécutifs de même phase → bande continue) ; le fond de cellule teinté envisagé initialement a été abandonné (confusion avec la couleur du calendrier des événements)
-- [x] Événements sous les jours (tronqués à ~12 chars)
+- [x] Bandes de couleur horizontales par semaine selon la phase (`GET /cycle/phases?from=&to=`) — trait fin en bas de chaque cellule, coloré par phase (jours consécutifs de même phase → bande continue) ; le fond de cellule teinté envisagé initialement a été abandonné (confusion avec la couleur du calendrier des événements). Repositionné le 2026-07-15 dans sa propre rangée juste sous les numéros de jour (au lieu de suivre les pastilles d'événement) : sa position variait selon qu'un jour avait 0, 1 ou 2 événements, cassant l'alignement horizontal de la bande d'une semaine à l'autre — constaté sur device en testant l'import Google.
+- [x] Événements sous les jours (tronqués à ~12 chars) — les événements journée entière multi-jours (import Google notamment) n'apparaissaient que sur leur premier jour ; ajout d'un rendu en bandeau continu (`layoutWeekBanners()`, `utils/calendarGrid.ts`) enjambant les cellules concernées, titre affiché une seule fois, avec empilement en plusieurs lignes si des événements se chevauchent
 - [x] Icônes barre sup : 🔍 Recherche, 📥 Invitations, ⚙️ Paramètres — 🔍 câblée (ouvre l'Écran 15) ; 📥 et ⚙️ affichées mais non câblées (Écran 14 Invitations en v0.4, pas d'écran Paramètres prévu au TODO)
 - [x] Bouton "Aujourd'hui" (bas)
-- [x] Bouton "Calendriers" (filtre) (bas) — panneau local avec cases à cocher par calendrier (`GET /calendars`)
-- [x] FAB "+" → créer un événement — modal dédiée (`CreateEventModal`), pas de bottom sheet (réservé à l'Écran 12)
+- [x] Bouton "Calendriers" (filtre) (bas) — panneau local avec cases à cocher par calendrier (`GET /calendars`). Corrigé le 2026-07-15 : le panneau était rendu avant la barre du bas dans le JSX (sans `zIndex`), donc visuellement recouvert par elle et difficile à cliquer — réordonné + `zIndex`/`elevation` + fond semi-transparent pour fermer au tap extérieur. Un bouton "+ Importer un calendrier Google" a été ajouté dans ce même panneau (réutilise `useGoogleCalendarImport`), l'import n'étant sinon déclenchable qu'une fois, pendant l'onboarding
+- [x] FAB "+" → créer un événement — modal dédiée (`CreateEventModal`), pas de bottom sheet (réservé à l'Écran 12). Formulaire retravaillé le 2026-07-15 (retour utilisatrice : trop de blocs bordés empilés) en deux cartes groupées "Quand"/"Détails" avec séparateurs internes ; ajout du support des événements "Toute la journée" (absent jusque-là : aucun champ ne permettait d'en créer), y compris sur plusieurs jours via un sélecteur "Jusqu'au" ; padding de zone de sécurité ajouté en bas (boutons Annuler/Créer se superposaient à la barre de navigation Android)
 
 ### Frontend — Écran 12 — Détail d'un événement (bottom sheet)
 - [x] Bottom sheet avec `@gorhom/bottom-sheet`
-- [x] Titre, date, horaire, lieu, calendrier (couleur), notes
+- [x] Titre, date, horaire, lieu, calendrier (couleur), notes — les événements journée entière (imports Google notamment) affichaient un horaire absurde ("02:00 - 02:00") : `startAt`/`endAt` sont ancrés à minuit UTC pour ces événements, et le formatage en heure locale (France, UTC+2 l'été) faisait dériver l'affichage. Corrigé le 2026-07-15 : plage horaire remplacée par "Toute la journée" (et plage de dates au lieu d'une date unique si l'événement couvre plusieurs jours), formatage forcé en UTC via `Intl`
 - [x] Indicateur de phase : "Non concerné" OU `[phase] — [recommandation]` — texte aligné sur la maquette Figma ("Incompatible avec la phase du cycle" / "Non concerné avec la phase du cycle") plutôt que le gabarit `[phase] — [recommandation]`
 - [x] Bouton "Voir les suggestions" si phase défavorable + événement déplaçable — remplacé par un bandeau de recommandation affiché directement (pas de bouton intermédiaire), avec "Garder cette date" / "Choisir un créneau" → ouvre un mini-calendrier (jours favorables en surbrillance, événements déjà prévus visibles, jours passés exclus) ; couvre le besoin de l'Écran 13 (v0.4) en version simplifiée côté client, sans passer par `MoveSuggestion`/`RecommendationModule`. Un rebranchement sur ces endpoints (écran dédié listant les vraies `MoveSuggestion`) a été tenté le 2026-07-14 puis abandonné : l'UX obtenue était nettement moins bonne que ce mini-calendrier — ne pas retenter sans en rediscuter.
 - [x] Bouton "Se désinscrire" pour événements importés — + Supprimer/Modifier pour les événements locaux (hors périmètre TODO initial mais nécessaire pour un CRUD complet ; réutilise `CreateEventModal` en mode édition)
@@ -297,13 +305,13 @@
   `authStore.ts`, `cycleStore.ts`, `useDebouncedValue.ts`. Seuils vérifiés fonctionnels (testé
   qu'un seuil intentionnellement cassé fait échouer `test:cov`, pas juste silencieusement ignoré).
 - [x] Passer tous les tests unitaires définis en v0.1, v0.2, v0.3 et v0.4 au vert (aucun test e2e
-  prévu — hors scope du projet) — 58 tests backend, 47 tests frontend, tous verts
+  prévu — hors scope du projet) — 58 tests backend, 57 tests frontend, tous verts
 - [ ] Cahier de recette — vérifier manuellement CR-01 à CR-13. CR-01/02/03/04/05/07/08/10/11/12
   vérifiés par appels API réels (curl) sur une instance backend isolée (port 3002, même BDD),
   compte de test créé puis supprimé via `DELETE /users/me` en fin de vérification (double usage :
-  nettoyage + revalidation de l'endpoint via un vrai appel HTTP). CR-06 confirmé par l'utilisateur
-  sur device. CR-09 implémenté, vérification manuelle en attente (config Google Cloud Console en
-  cours) ; CR-13 partiellement fait (TalkBack validé, VoiceOver en attente d'un test sur iPhone) :
+  nettoyage + revalidation de l'endpoint via un vrai appel HTTP). CR-06 et CR-09 confirmés par
+  l'utilisatrice sur device (build dev-client EAS) ; CR-13 partiellement fait (TalkBack validé,
+  VoiceOver en attente d'un test sur iPhone) :
   - [x] CR-01 : Inscription email valide → OTP reçu — 201, OTP `236583` généré et loggé
   - [x] CR-02 : Email déjà utilisé → erreur claire — 409 "Email déjà utilisé"
   - [x] CR-03 : OTP correct → accès accordé — 200, access + refresh token émis
@@ -316,10 +324,11 @@
     ovulation, score 3)
   - [x] CR-08 : Accepter une suggestion → événement déplacé — `POST /suggestions/:id/accept` →
     suggestion "accepted", `startAt`/`endAt` de l'événement mis à jour à la date suggérée
-  - [ ] CR-09 : Import Google Calendar → événements visibles — implémenté le 2026-07-15
-    (`POST /calendars/import/google`, cf. v0.3), reste à vérifier en conditions réelles une fois
-    la config Google Cloud Console (OAuth consent screen + clients Android/iOS) faite côté
-    utilisateur et un dev-client buildé (`npx expo run:android`)
+  - [x] CR-09 : Import Google Calendar → événements visibles — vérifié le 2026-07-15 sur un
+    dev-client buildé via EAS Build cloud (Android), consentement Google réel, calendrier +
+    événements du compte de test importés et visibles dans l'app, ré-import sans doublon
+    (cf. v0.3 pour le détail des deux ajustements OAuth nécessaires en cours de route). iOS non
+    testé, faute d'iPhone — même limite que CR-13
   - [x] CR-10 : Recherche "Boxe" → résultats filtrés — `GET /events/search?q=Boxe` → 1 résultat,
     insensible à la casse
   - [x] CR-11 : Accepter invitation → statut "Accepté" — `PATCH /invitations/:id` →
