@@ -327,7 +327,8 @@
   `authStore.ts`, `cycleStore.ts`, `useDebouncedValue.ts`. Seuils vérifiés fonctionnels (testé
   qu'un seuil intentionnellement cassé fait échouer `test:cov`, pas juste silencieusement ignoré).
 - [x] Passer tous les tests unitaires définis en v0.1, v0.2, v0.3 et v0.4 au vert (aucun test e2e
-  prévu — hors scope du projet) — 58 tests backend, 57 tests frontend, tous verts
+  prévu — hors scope du projet) — 71 tests backend, 59 tests frontend, tous verts (130 au total ;
+  décompte mis à jour le 2026-07-16 suite aux tests ajoutés pour l'import Apple Calendar)
 - [ ] Cahier de recette — vérifier manuellement CR-01 à CR-13. CR-01/02/03/04/05/07/08/10/11/12
   vérifiés par appels API réels (curl) sur une instance backend isolée (port 3002, même BDD),
   compte de test créé puis supprimé via `DELETE /users/me` en fin de vérification (double usage :
