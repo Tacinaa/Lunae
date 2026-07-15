@@ -34,6 +34,43 @@ function formatTimeRange(start: Date, end: Date): string {
   return `${start.toLocaleTimeString('fr-FR', opts)} - ${end.toLocaleTimeString('fr-FR', opts)}`;
 }
 
+/**
+ * Les événements journée entière n'ont pas d'heure significative : startAt/endAt sont
+ * ancrés à minuit UTC (convention Google, endAt exclusif). Formater en fuseau local
+ * (comme formatDate) ferait apparaître "02:00" au lieu de rien, et pourrait même faire
+ * glisser la date affichée d'un jour selon le fuseau de l'appareil — on force donc UTC.
+ */
+function formatAllDayDate(date: Date): string {
+  const formatted = date.toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+
+function formatAllDayDateShort(date: Date): string {
+  return date.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'UTC',
+  });
+}
+
+function lastInclusiveAllDayDate(endAt: string): Date {
+  return new Date(new Date(endAt).getTime() - 24 * 60 * 60 * 1000);
+}
+
+function isSameUtcDay(a: Date, b: Date): boolean {
+  return (
+    a.getUTCFullYear() === b.getUTCFullYear() &&
+    a.getUTCMonth() === b.getUTCMonth() &&
+    a.getUTCDate() === b.getUTCDate()
+  );
+}
+
 export function EventDetailSheet({ event, phase, onClose, onEdit, onChooseSlot, onDeleted }: Props) {
   const sheetRef = useRef<BottomSheetModal>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -83,7 +120,13 @@ export function EventDetailSheet({ event, phase, onClose, onEdit, onChooseSlot, 
 
           {event.notes ? <Text style={styles.notes}>{event.notes}</Text> : null}
 
-          <Text style={styles.date}>{formatDate(new Date(event.startAt))}</Text>
+          <Text style={styles.date}>
+            {event.isAllDay
+              ? isSameUtcDay(new Date(event.startAt), lastInclusiveAllDayDate(event.endAt))
+                ? formatAllDayDate(new Date(event.startAt))
+                : `${formatAllDayDateShort(new Date(event.startAt))} → ${formatAllDayDate(lastInclusiveAllDayDate(event.endAt))}`
+              : formatDate(new Date(event.startAt))}
+          </Text>
 
           {!event.isMovable ? (
             <View style={styles.phaseRow}>
@@ -127,7 +170,11 @@ export function EventDetailSheet({ event, phase, onClose, onEdit, onChooseSlot, 
             </>
           ) : null}
 
-          <Text style={styles.time}>{formatTimeRange(new Date(event.startAt), new Date(event.endAt))}</Text>
+          <Text style={styles.time}>
+            {event.isAllDay
+              ? 'Toute la journée'
+              : formatTimeRange(new Date(event.startAt), new Date(event.endAt))}
+          </Text>
 
           {event.location ? <Text style={styles.location}>{event.location}</Text> : null}
 
