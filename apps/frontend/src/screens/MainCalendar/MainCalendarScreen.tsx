@@ -285,6 +285,32 @@ export function MainCalendarScreen(_props: Props) {
                 })}
               </View>
 
+              <View style={styles.weekRow}>
+                {week.map((day) => {
+                  const dateKey = toDateKey(day);
+                  const phase = phaseByDate.get(dateKey);
+                  const isCurrentMonth = day.getUTCMonth() === visibleMonth;
+
+                  return (
+                    <View
+                      key={dateKey}
+                      style={[styles.phaseCell, !isCurrentMonth && styles.dayCellOutside]}
+                    >
+                      {phase && (
+                        <View style={styles.phaseSegmentsRow}>
+                          {Array.from({ length: getPhaseSegmentCount(phase) }).map((_, i) => (
+                            <View
+                              key={i}
+                              style={[styles.phaseSegment, { backgroundColor: getPhaseColor(phase) }]}
+                            />
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+
               {banners.map((banner) => {
                 const calendarColor = banner.event.calendar?.color ?? colors.primary;
                 return (
@@ -310,14 +336,13 @@ export function MainCalendarScreen(_props: Props) {
               <View style={styles.weekRow}>
                 {week.map((day) => {
                   const dateKey = toDateKey(day);
-                  const phase = phaseByDate.get(dateKey);
                   const isCurrentMonth = day.getUTCMonth() === visibleMonth;
                   const dayEvents = eventsByDate.get(dateKey) ?? [];
 
                   return (
                     <View
                       key={dateKey}
-                      style={[styles.dayContentCell, !isCurrentMonth && styles.dayCellOutside]}
+                      style={[styles.pillsCell, !isCurrentMonth && styles.dayCellOutside]}
                     >
                       {dayEvents.slice(0, 2).map((event) => {
                         const calendarColor = event.calendar?.color ?? colors.primary;
@@ -335,16 +360,6 @@ export function MainCalendarScreen(_props: Props) {
                           </Pressable>
                         );
                       })}
-                      {phase && (
-                        <View style={styles.phaseSegmentsRow}>
-                          {Array.from({ length: getPhaseSegmentCount(phase) }).map((_, i) => (
-                            <View
-                              key={i}
-                              style={[styles.phaseSegment, { backgroundColor: getPhaseColor(phase) }]}
-                            />
-                          ))}
-                        </View>
-                      )}
                     </View>
                   );
                 })}
@@ -528,12 +543,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
     paddingTop: 4,
   },
-  dayContentCell: {
+  pillsCell: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 24,
     alignItems: 'stretch',
     paddingHorizontal: 2,
     paddingBottom: 6,
+  },
+  phaseCell: {
+    flex: 1,
+    alignItems: 'stretch',
+    paddingHorizontal: 2,
   },
   dayCellOutside: { opacity: 0.35 },
   bannerRow: { flexDirection: 'row', paddingHorizontal: 2, marginTop: 2 },
