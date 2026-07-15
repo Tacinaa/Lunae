@@ -15,6 +15,7 @@ import type { Phase, PhaseEntry } from '../../store/cycleStore';
 import {
   MONTH_LABELS,
   WEEKDAY_LABELS,
+  dateKeysInRange,
   getMonthMatrix,
   isSameDay,
   toDateKey,
@@ -23,6 +24,7 @@ import { getErrorMessage } from '../../utils/errors';
 import { resetOnboardingSeen } from '../../utils/onboarding';
 import { PHASE_LABELS } from '../../utils/phaseRecommendation';
 import { colors, getPhaseColor, getPhaseSegmentCount, hexToRgba } from '../../utils/theme';
+import { useGoogleCalendarImport } from '../../hooks/useGoogleCalendarImport';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'MainCalendar'>;
 
@@ -56,16 +58,32 @@ export function MainCalendarScreen(_props: Props) {
   const [showSearch, setShowSearch] = useState(false);
   const [showInvitations, setShowInvitations] = useState(false);
   const logout = useAuthStore((state) => state.logout);
+  const {
+    startImport: startGoogleImport,
+    loading: googleImportLoading,
+    error: googleImportError,
+  } = useGoogleCalendarImport();
 
   const weeks = useMemo(() => getMonthMatrix(visibleYear, visibleMonth), [visibleYear, visibleMonth]);
   const rangeStart = weeks[0][0];
   const rangeEnd = weeks[weeks.length - 1][6];
 
-  useEffect(() => {
+  const refreshCalendars = () => {
     getCalendars()
       .then(setCalendars)
       .catch(() => undefined);
+  };
+
+  useEffect(() => {
+    refreshCalendars();
   }, []);
+
+  const handleGoogleImport = async () => {
+    const result = await startGoogleImport();
+    if (result) {
+      refreshCalendars();
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -105,10 +123,12 @@ export function MainCalendarScreen(_props: Props) {
     events
       .filter((e) => !hiddenCalendarIds.has(e.calendarId))
       .forEach((e) => {
-        const key = toDateKey(new Date(e.startAt));
-        const list = map.get(key) ?? [];
-        list.push(e);
-        map.set(key, list);
+        const keys = dateKeysInRange(new Date(e.startAt), new Date(e.endAt), e.isAllDay);
+        keys.forEach((key) => {
+          const list = map.get(key) ?? [];
+          list.push(e);
+          map.set(key, list);
+        });
       });
     return map;
   }, [events, hiddenCalendarIds]);
@@ -278,33 +298,6 @@ export function MainCalendarScreen(_props: Props) {
         ))}
       </ScrollView>
 
-      {showCalendarFilter && (
-        <View style={styles.filterPanel}>
-          {calendars.length === 0 ? (
-            <Text style={styles.filterEmpty}>Aucun calendrier</Text>
-          ) : (
-            calendars.map((cal) => (
-              <Pressable
-                key={cal.id}
-                style={styles.filterRow}
-                onPress={() => toggleCalendar(cal.id)}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: !hiddenCalendarIds.has(cal.id) }}
-                accessibilityLabel={cal.name}
-              >
-                <View style={[styles.filterDot, { backgroundColor: cal.color }]} />
-                <Text style={styles.filterLabel}>{cal.name}</Text>
-                <View style={styles.filterCheck}>
-                  {!hiddenCalendarIds.has(cal.id) && (
-                    <Ionicons name="checkmark" size={20} color={colors.primary} />
-                  )}
-                </View>
-              </Pressable>
-            ))
-          )}
-        </View>
-      )}
-
       <View style={styles.bottomBar}>
         <Pressable
           style={styles.bottomButton}
@@ -323,6 +316,55 @@ export function MainCalendarScreen(_props: Props) {
           <Text style={styles.bottomButtonText}>Calendriers</Text>
         </Pressable>
       </View>
+
+      {showCalendarFilter && (
+        <>
+          <Pressable
+            style={styles.filterBackdrop}
+            onPress={() => setShowCalendarFilter(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Fermer le filtre des calendriers"
+          />
+          <View style={styles.filterPanel}>
+            {calendars.length === 0 ? (
+              <Text style={styles.filterEmpty}>Aucun calendrier</Text>
+            ) : (
+              calendars.map((cal) => (
+                <Pressable
+                  key={cal.id}
+                  style={styles.filterRow}
+                  onPress={() => toggleCalendar(cal.id)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: !hiddenCalendarIds.has(cal.id) }}
+                  accessibilityLabel={cal.name}
+                >
+                  <View style={[styles.filterDot, { backgroundColor: cal.color }]} />
+                  <Text style={styles.filterLabel}>{cal.name}</Text>
+                  <View style={styles.filterCheck}>
+                    {!hiddenCalendarIds.has(cal.id) && (
+                      <Ionicons name="checkmark" size={20} color={colors.primary} />
+                    )}
+                  </View>
+                </Pressable>
+              ))
+            )}
+            <View style={styles.filterDivider} />
+            {googleImportLoading ? (
+              <ActivityIndicator color={colors.primary} style={styles.filterImportLoader} />
+            ) : (
+              <Pressable
+                style={styles.filterImportRow}
+                onPress={handleGoogleImport}
+                accessibilityRole="button"
+                accessibilityLabel="Importer un calendrier Google"
+              >
+                <Text style={styles.filterImportText}>+ Importer un calendrier Google</Text>
+              </Pressable>
+            )}
+            {googleImportError && <Text style={styles.filterImportError}>{googleImportError}</Text>}
+          </View>
+        </>
+      )}
 
       {__DEV__ && (
         <Pressable
@@ -461,9 +503,17 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 1.5,
   },
+  filterBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 15,
+  },
   filterPanel: {
     position: 'absolute',
-    bottom: 76,
+    bottom: 84,
     left: 16,
     right: 16,
     backgroundColor: colors.background,
@@ -471,6 +521,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: 12,
+    zIndex: 20,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
   },
   filterEmpty: { fontSize: 13, color: colors.textMuted, textAlign: 'center', paddingVertical: 8 },
   filterRow: {
@@ -481,6 +537,24 @@ const styles = StyleSheet.create({
   filterDot: { width: 12, height: 12, borderRadius: 6, marginRight: 12 },
   filterLabel: { flex: 1, fontSize: 14, color: colors.text },
   filterCheck: { width: 20, alignItems: 'center', justifyContent: 'center' },
+  filterDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: 4,
+  },
+  filterImportRow: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterImportText: { fontSize: 14, fontWeight: '600', color: colors.primary },
+  filterImportLoader: { marginVertical: 10 },
+  filterImportError: {
+    fontSize: 12,
+    color: colors.danger,
+    textAlign: 'center',
+    paddingBottom: 4,
+  },
   bottomBar: {
     flexDirection: 'row',
     borderTopWidth: 1,
