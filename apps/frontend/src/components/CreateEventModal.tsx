@@ -14,6 +14,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createEvent, updateEvent, type CalendarDto, type EventDto, type EventType } from '../api/calendar';
 import { getErrorMessage } from '../utils/errors';
 import { CATEGORY_OPTIONS } from '../utils/phaseRecommendation';
@@ -32,6 +33,7 @@ interface Props {
 }
 
 type ActivePicker = 'start' | 'end' | null;
+type ExpandedSection = 'date' | 'endDate' | 'calendar' | null;
 
 function combineDateAndTime(date: Date, time: Date): Date {
   const combined = new Date(date);
@@ -56,6 +58,10 @@ function toUtcMidnight(date: Date): Date {
   return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
 }
 
+function lastInclusiveAllDayDate(endAt: string): Date {
+  return new Date(new Date(endAt).getTime() - 24 * 60 * 60 * 1000);
+}
+
 export function CreateEventModal({
   visible,
   calendars,
@@ -66,6 +72,7 @@ export function CreateEventModal({
   onSaved,
 }: Props) {
   const isEditing = Boolean(event);
+  const insets = useSafeAreaInsets();
 
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
@@ -73,13 +80,13 @@ export function CreateEventModal({
   const [calendarId, setCalendarId] = useState<string | undefined>(calendars[0]?.id);
   const [eventType, setEventType] = useState<EventType>('other');
   const [date, setDate] = useState(defaultDate);
+  const [endDate, setEndDate] = useState(defaultDate);
   const [referenceDate, setReferenceDate] = useState(defaultDate);
   const [isAllDay, setIsAllDay] = useState(false);
   const [startTime, setStartTime] = useState(() => withHours(defaultDate, 9));
   const [endTime, setEndTime] = useState(() => withHours(defaultDate, 10));
   const [activePicker, setActivePicker] = useState<ActivePicker>(null);
-  const [dateExpanded, setDateExpanded] = useState(false);
-  const [calendarExpanded, setCalendarExpanded] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,6 +99,7 @@ export function CreateEventModal({
       setCalendarId(event.calendarId);
       setEventType(event.eventType);
       setDate(new Date(event.startAt));
+      setEndDate(event.isAllDay ? lastInclusiveAllDayDate(event.endAt) : new Date(event.startAt));
       setReferenceDate(new Date(event.startAt));
       setIsAllDay(event.isAllDay);
       setStartTime(new Date(event.startAt));
@@ -103,13 +111,13 @@ export function CreateEventModal({
       setCalendarId(calendars[0]?.id);
       setEventType('other');
       setDate(defaultDate);
+      setEndDate(defaultDate);
       setReferenceDate(defaultDate);
       setIsAllDay(false);
       setStartTime(withHours(defaultDate, 9));
       setEndTime(withHours(defaultDate, 10));
     }
-    setDateExpanded(Boolean(focusDate));
-    setCalendarExpanded(false);
+    setExpandedSection(focusDate ? 'date' : null);
     setError(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, event, focusDate]);
@@ -119,6 +127,19 @@ export function CreateEventModal({
     calendars.find((cal) => cal.id === resolvedCalendarId)?.color ?? colors.primary;
   const isMovable = event ? event.isMovable : true;
   const canSubmit = Boolean(title.trim()) && Boolean(resolvedCalendarId) && !isSubmitting;
+
+  const toggleSection = (section: Exclude<ExpandedSection, null>) => {
+    setExpandedSection((current) => (current === section ? null : section));
+  };
+
+  const handleStartDateChange = (selected: Date) => {
+    setDate(selected);
+    if (endDate.getTime() < selected.getTime()) setEndDate(selected);
+  };
+
+  const handleEndDateChange = (selected: Date) => {
+    setEndDate(selected.getTime() < date.getTime() ? date : selected);
+  };
 
   const handlePickerChange = (_event: DateTimePickerChangeEvent, selected: Date) => {
     if (activePicker === 'start') setStartTime(selected);
@@ -135,7 +156,7 @@ export function CreateEventModal({
     try {
       const startAt = isAllDay ? toUtcMidnight(date) : combineDateAndTime(date, startTime);
       const endAt = isAllDay
-        ? new Date(toUtcMidnight(date).getTime() + 24 * 60 * 60 * 1000)
+        ? new Date(toUtcMidnight(endDate).getTime() + 24 * 60 * 60 * 1000)
         : combineDateAndTime(date, endTime);
       const payload = {
         calendarId: resolvedCalendarId,
@@ -156,92 +177,124 @@ export function CreateEventModal({
     }
   };
 
-  const dateSection = (
-    <View style={styles.dateSection}>
-      <Pressable
-        style={styles.dateToggleRow}
-        onPress={() => setDateExpanded((v) => !v)}
-        accessibilityRole="button"
-        accessibilityLabel="Date de l'événement"
-      >
-        <Text style={styles.sectionLabel}>Date</Text>
-        <View style={styles.dateToggleValueRow}>
-          <Text style={styles.dateToggleValue}>{date.toLocaleDateString('fr-FR')}</Text>
-          <Text style={styles.dateToggleChevron}>{dateExpanded ? '▲' : '▼'}</Text>
-        </View>
-      </Pressable>
-      {dateExpanded && (
-        <EventDatePicker
-          value={date}
-          referenceDate={referenceDate}
-          selectionColor={resolvedCalendarColor}
-          isMovable={isMovable}
-          eventType={eventType}
-          excludeEventId={event?.id}
-          onChange={setDate}
-        />
-      )}
-
-      <Pressable
-        style={styles.allDayRow}
-        onPress={() => setIsAllDay((v) => !v)}
-        accessibilityRole="switch"
-        accessibilityState={{ checked: isAllDay }}
-        accessibilityLabel="Toute la journée"
-      >
-        <Text style={styles.sectionLabel}>Toute la journée</Text>
-        {isAllDay && <Ionicons name="checkmark" size={20} color={colors.primary} />}
-      </Pressable>
-
-      {!isAllDay && (
-        <View style={styles.fieldRow}>
-        <View style={styles.fieldColumn}>
-          <Text style={styles.timeLabel}>Début</Text>
-          <Pressable
-            style={styles.fieldButton}
-            onPress={() => setActivePicker('start')}
-            accessibilityRole="button"
-            accessibilityLabel="Heure de début"
-          >
-            <Text style={styles.fieldButtonText}>
-              {startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-            </Text>
-          </Pressable>
-        </View>
-        <View style={styles.fieldColumn}>
-          <Text style={styles.timeLabel}>Fin</Text>
-          <Pressable
-            style={styles.fieldButton}
-            onPress={() => setActivePicker('end')}
-            accessibilityRole="button"
-            accessibilityLabel="Heure de fin"
-          >
-            <Text style={styles.fieldButtonText}>
-              {endTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-            </Text>
-          </Pressable>
-        </View>
-        </View>
-      )}
-    </View>
-  );
-
   const resolvedCalendarName =
     calendars.find((cal) => cal.id === resolvedCalendarId)?.name ?? 'Aucun calendrier';
 
-  const titleAndCalendarSection = (
-    <>
-      <TextInput
-        style={styles.input}
-        placeholder="Titre de l'événement"
-        placeholderTextColor={colors.textMuted}
-        value={title}
-        onChangeText={setTitle}
-        accessibilityLabel="Titre de l'événement"
-      />
+  const whenCard = (
+    <View style={styles.sectionBlock}>
+      <Text style={styles.sectionHeading}>Quand</Text>
+      <View style={styles.card}>
+        <Pressable
+          style={styles.cardRow}
+          onPress={() => toggleSection('date')}
+          accessibilityRole="button"
+          accessibilityLabel="Date de l'événement"
+        >
+          <Text style={styles.cardRowLabel}>Date</Text>
+          <View style={styles.cardRowValueGroup}>
+            <Text style={styles.cardRowValue}>{date.toLocaleDateString('fr-FR')}</Text>
+            <Text style={styles.chevron}>{expandedSection === 'date' ? '▲' : '▼'}</Text>
+          </View>
+        </Pressable>
+        {expandedSection === 'date' && (
+          <View style={styles.pickerWrap}>
+            <EventDatePicker
+              value={date}
+              referenceDate={referenceDate}
+              selectionColor={resolvedCalendarColor}
+              isMovable={isMovable}
+              eventType={eventType}
+              excludeEventId={event?.id}
+              onChange={handleStartDateChange}
+            />
+          </View>
+        )}
 
-      <View style={styles.categorySection}>
-        <Text style={styles.sectionLabel}>Catégorie</Text>
+        <View style={styles.cardDivider} />
+
+        <Pressable
+          style={styles.cardRow}
+          onPress={() => setIsAllDay((v) => !v)}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: isAllDay }}
+          accessibilityLabel="Toute la journée"
+        >
+          <Text style={styles.cardRowLabel}>Toute la journée</Text>
+          <View style={[styles.checkbox, isAllDay && styles.checkboxChecked]}>
+            {isAllDay && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
+          </View>
+        </Pressable>
+
+        {isAllDay ? (
+          <>
+            <View style={styles.cardDivider} />
+            <Pressable
+              style={styles.cardRow}
+              onPress={() => toggleSection('endDate')}
+              accessibilityRole="button"
+              accessibilityLabel="Jusqu'au"
+            >
+              <Text style={styles.cardRowLabel}>Jusqu’au</Text>
+              <View style={styles.cardRowValueGroup}>
+                <Text style={styles.cardRowValue}>{endDate.toLocaleDateString('fr-FR')}</Text>
+                <Text style={styles.chevron}>{expandedSection === 'endDate' ? '▲' : '▼'}</Text>
+              </View>
+            </Pressable>
+            {expandedSection === 'endDate' && (
+              <View style={styles.pickerWrap}>
+                <EventDatePicker
+                  value={endDate}
+                  referenceDate={referenceDate}
+                  selectionColor={resolvedCalendarColor}
+                  isMovable={false}
+                  eventType={eventType}
+                  excludeEventId={event?.id}
+                  onChange={handleEndDateChange}
+                />
+              </View>
+            )}
+          </>
+        ) : (
+          <>
+            <View style={styles.cardDivider} />
+            <View style={styles.timeRow}>
+              <Pressable
+                style={styles.timeColumn}
+                onPress={() => setActivePicker('start')}
+                accessibilityRole="button"
+                accessibilityLabel="Heure de début"
+              >
+                <Text style={styles.cardRowLabel}>Début</Text>
+                <Text style={styles.cardRowValue}>
+                  {startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                </Text>
+              </Pressable>
+              <View style={styles.timeColumnDivider} />
+              <Pressable
+                style={styles.timeColumn}
+                onPress={() => setActivePicker('end')}
+                accessibilityRole="button"
+                accessibilityLabel="Heure de fin"
+              >
+                <Text style={styles.cardRowLabel}>Fin</Text>
+                <Text style={styles.cardRowValue}>
+                  {endTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                </Text>
+              </Pressable>
+            </View>
+          </>
+        )}
+      </View>
+    </View>
+  );
+
+  const detailsCard = (
+    <View style={styles.sectionBlock}>
+      <Text style={styles.sectionHeading}>Détails</Text>
+      <View style={styles.card}>
+        <View style={styles.cardRow}>
+          <Text style={styles.cardRowLabel}>Catégorie</Text>
+        </View>
         <View style={styles.categoryChipsRow}>
           {CATEGORY_OPTIONS.map((option) => {
             const selected = eventType === option.value;
@@ -261,36 +314,36 @@ export function CreateEventModal({
             );
           })}
         </View>
-      </View>
 
-      <View style={styles.calendarSection}>
+        <View style={styles.cardDivider} />
+
         {calendars.length === 0 ? (
           <Text style={styles.hint}>Aucun calendrier disponible.</Text>
         ) : (
           <>
             <Pressable
-              style={styles.dateToggleRow}
-              onPress={() => setCalendarExpanded((v) => !v)}
+              style={styles.cardRow}
+              onPress={() => toggleSection('calendar')}
               accessibilityRole="button"
               accessibilityLabel="Calendrier"
             >
-              <Text style={styles.sectionLabel}>Calendrier</Text>
-              <View style={styles.dateToggleValueRow}>
+              <Text style={styles.cardRowLabel}>Calendrier</Text>
+              <View style={styles.cardRowValueGroup}>
                 <View style={[styles.calendarDot, { backgroundColor: resolvedCalendarColor }]} />
-                <Text style={styles.dateToggleValue}>{resolvedCalendarName}</Text>
-                <Text style={styles.dateToggleChevron}>{calendarExpanded ? '▲' : '▼'}</Text>
+                <Text style={styles.cardRowValue}>{resolvedCalendarName}</Text>
+                <Text style={styles.chevron}>{expandedSection === 'calendar' ? '▲' : '▼'}</Text>
               </View>
             </Pressable>
-            {calendarExpanded && (
-              <View style={styles.calendarList}>
-                {calendars.map((cal, index) => (
+            {expandedSection === 'calendar' &&
+              calendars.map((cal) => (
+                <View key={cal.id}>
+                  <View style={styles.cardDivider} />
                   <Pressable
-                    key={cal.id}
                     onPress={() => {
                       setCalendarId(cal.id);
-                      setCalendarExpanded(false);
+                      setExpandedSection(null);
                     }}
-                    style={[styles.calendarListRow, index > 0 && styles.calendarListRowBorder]}
+                    style={styles.calendarListRow}
                     accessibilityRole="button"
                     accessibilityLabel={`Calendrier ${cal.name}`}
                   >
@@ -300,36 +353,35 @@ export function CreateEventModal({
                       <Ionicons name="checkmark" size={20} color={colors.primary} />
                     )}
                   </Pressable>
-                ))}
-              </View>
-            )}
+                </View>
+              ))}
           </>
         )}
+
+        <View style={styles.cardDivider} />
+
+        <TextInput
+          style={styles.cardInput}
+          placeholder="Lieu (optionnel)"
+          placeholderTextColor={colors.textMuted}
+          value={location}
+          onChangeText={setLocation}
+          accessibilityLabel="Lieu de l'événement"
+        />
+
+        <View style={styles.cardDivider} />
+
+        <TextInput
+          style={[styles.cardInput, styles.notesInput]}
+          placeholder="Notes (optionnel)"
+          placeholderTextColor={colors.textMuted}
+          value={notes}
+          onChangeText={setNotes}
+          multiline
+          accessibilityLabel="Notes de l'événement"
+        />
       </View>
-    </>
-  );
-
-  const locationAndNotesSection = (
-    <>
-      <TextInput
-        style={styles.input}
-        placeholder="Lieu (optionnel)"
-        placeholderTextColor={colors.textMuted}
-        value={location}
-        onChangeText={setLocation}
-        accessibilityLabel="Lieu de l'événement"
-      />
-
-      <TextInput
-        style={[styles.input, styles.notesInput]}
-        placeholder="Notes (optionnel)"
-        placeholderTextColor={colors.textMuted}
-        value={notes}
-        onChangeText={setNotes}
-        multiline
-        accessibilityLabel="Notes de l'événement"
-      />
-    </>
+    </View>
   );
 
   return (
@@ -337,22 +389,29 @@ export function CreateEventModal({
       <View style={styles.backdrop}>
         <ScrollView
           style={styles.sheet}
-          contentContainerStyle={styles.sheetContent}
+          contentContainerStyle={[styles.sheetContent, { paddingBottom: 24 + insets.bottom }]}
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.title}>{isEditing ? "Modifier l'événement" : 'Nouvel événement'}</Text>
 
+          <TextInput
+            style={styles.titleInput}
+            placeholder="Titre de l'événement"
+            placeholderTextColor={colors.textMuted}
+            value={title}
+            onChangeText={setTitle}
+            accessibilityLabel="Titre de l'événement"
+          />
+
           {focusDate ? (
             <>
-              {dateSection}
-              {titleAndCalendarSection}
-              {locationAndNotesSection}
+              {whenCard}
+              {detailsCard}
             </>
           ) : (
             <>
-              {titleAndCalendarSection}
-              {dateSection}
-              {locationAndNotesSection}
+              {detailsCard}
+              {whenCard}
             </>
           )}
 
@@ -407,45 +466,66 @@ const styles = StyleSheet.create({
   },
   sheetContent: { padding: 24 },
   title: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 16 },
-  input: {
+  titleInput: {
     minHeight: 44,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 15,
-    color: colors.text,
-    marginBottom: 16,
-  },
-  notesInput: { minHeight: 72, paddingTop: 12, textAlignVertical: 'top' },
-  hint: { fontSize: 13, color: colors.textMuted, marginBottom: 16 },
-  sectionLabel: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
-  dateSection: { marginBottom: 16 },
-  dateToggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 44,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-  },
-  dateToggleValueRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dateToggleValue: { fontSize: 14, color: colors.text },
-  dateToggleChevron: { fontSize: 10, color: colors.textMuted },
-  allDayRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 44,
-    marginTop: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
     paddingHorizontal: 4,
+    paddingVertical: 10,
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 20,
   },
-  categorySection: { marginBottom: 16 },
-  categoryChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  categoryChip: {
+  sectionBlock: { marginBottom: 16 },
+  sectionHeading: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  card: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     minHeight: 44,
+    paddingHorizontal: 16,
+  },
+  cardRowLabel: { fontSize: 14, color: colors.text },
+  cardRowValueGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cardRowValue: { fontSize: 14, color: colors.textMuted },
+  chevron: { fontSize: 10, color: colors.textMuted },
+  cardDivider: { height: 1, backgroundColor: colors.border },
+  pickerWrap: { paddingHorizontal: 12, paddingBottom: 8 },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
+  hint: { fontSize: 13, color: colors.textMuted, paddingHorizontal: 16, paddingVertical: 12 },
+  categoryChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  categoryChip: {
+    minHeight: 36,
     paddingHorizontal: 14,
     borderRadius: 18,
     borderWidth: 1,
@@ -456,15 +536,7 @@ const styles = StyleSheet.create({
   categoryChipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   categoryChipText: { fontSize: 13, color: colors.text, fontWeight: '600' },
   categoryChipTextSelected: { color: '#FFFFFF' },
-  calendarSection: { marginBottom: 16 },
   calendarDot: { width: 10, height: 10, borderRadius: 5 },
-  calendarList: {
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
   calendarListRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -472,21 +544,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 10,
   },
-  calendarListRowBorder: { borderTopWidth: 1, borderTopColor: colors.border },
   calendarListLabel: { flex: 1, fontSize: 14, color: colors.text },
-  fieldRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
-  fieldColumn: { flex: 1 },
-  timeLabel: { fontSize: 12, fontWeight: '600', color: colors.textMuted, marginBottom: 8 },
-  fieldButton: {
-    flex: 1,
+  cardInput: {
     minHeight: 44,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 16,
+    fontSize: 14,
+    color: colors.text,
   },
-  fieldButtonText: { fontSize: 13, color: colors.text },
+  notesInput: { minHeight: 72, paddingTop: 12, paddingBottom: 12, textAlignVertical: 'top' },
+  timeRow: { flexDirection: 'row', minHeight: 56 },
+  timeColumn: { flex: 1, paddingHorizontal: 16, paddingVertical: 8, justifyContent: 'center' },
+  timeColumnDivider: { width: 1, backgroundColor: colors.border },
   error: { color: colors.danger, fontSize: 13, marginBottom: 12 },
   actionsRow: { flexDirection: 'row', gap: 12 },
   cancelButton: {
