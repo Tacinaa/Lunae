@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +15,7 @@ import { BackButton } from '../../components/BackButton';
 import type { OnboardingSetupStackParamList } from '../../navigation/types';
 import { colors } from '../../utils/theme';
 import { getCalendars, type CalendarDto } from '../../api/calendar';
+import { useAppleCalendarImport } from '../../hooks/useAppleCalendarImport';
 import { useGoogleCalendarImport } from '../../hooks/useGoogleCalendarImport';
 
 type Props = NativeStackScreenProps<OnboardingSetupStackParamList, 'CalendarImport'>;
@@ -34,20 +36,31 @@ const PROVIDERS: { id: Provider; label: string }[] = [
 
 export function CalendarImportScreen({ navigation }: Props) {
   const [importedAccounts, setImportedAccounts] = useState<ImportedAccount[]>([]);
-  const [googleCalendars, setGoogleCalendars] = useState<CalendarDto[]>([]);
+  const [importedCalendars, setImportedCalendars] = useState<CalendarDto[]>([]);
   const { startImport, loading: googleLoading, error: googleError } = useGoogleCalendarImport();
+  const {
+    importCalendar: importApple,
+    loading: appleLoading,
+    error: appleError,
+  } = useAppleCalendarImport();
 
-  const refreshGoogleCalendars = async () => {
+  const [showAppleForm, setShowAppleForm] = useState(false);
+  const [appleId, setAppleId] = useState('');
+  const [applePassword, setApplePassword] = useState('');
+
+  const refreshImportedCalendars = async () => {
     try {
       const calendars = await getCalendars();
-      setGoogleCalendars(calendars.filter((calendar) => calendar.source === 'google'));
+      setImportedCalendars(
+        calendars.filter((calendar) => calendar.source === 'google' || calendar.source === 'apple'),
+      );
     } catch {
       // Liste laissée vide en cas d'échec réseau — ne bloque pas l'onboarding.
     }
   };
 
   useEffect(() => {
-    refreshGoogleCalendars();
+    refreshImportedCalendars();
   }, []);
 
   const handleAddProvider = (provider: Provider, label: string) => {
@@ -60,7 +73,17 @@ export function CalendarImportScreen({ navigation }: Props) {
   const handleGoogleImport = async () => {
     const result = await startImport();
     if (result) {
-      await refreshGoogleCalendars();
+      await refreshImportedCalendars();
+    }
+  };
+
+  const handleAppleSubmit = async () => {
+    const result = await importApple(appleId.trim(), applePassword.trim());
+    if (result) {
+      setShowAppleForm(false);
+      setAppleId('');
+      setApplePassword('');
+      await refreshImportedCalendars();
     }
   };
 
@@ -68,12 +91,12 @@ export function CalendarImportScreen({ navigation }: Props) {
     setImportedAccounts((accounts) => accounts.filter((account) => account.id !== id));
   };
 
-  const hasImportedAccounts = importedAccounts.length > 0 || googleCalendars.length > 0;
+  const hasImportedAccounts = importedAccounts.length > 0 || importedCalendars.length > 0;
 
   return (
     <SafeAreaView style={styles.container}>
       <BackButton onPress={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Import de calendriers</Text>
         <Text style={styles.subtitle}>
           Connectez vos calendriers existants pour les retrouver directement dans Lunae.
@@ -83,23 +106,66 @@ export function CalendarImportScreen({ navigation }: Props) {
           <View key={id}>
             <View style={styles.providerRow}>
               <Text style={styles.providerLabel}>{label}</Text>
-              {id === 'google' && googleLoading ? (
+              {(id === 'google' && googleLoading) || (id === 'apple' && appleLoading) ? (
                 <ActivityIndicator color={colors.primary} />
               ) : (
                 <Pressable
                   style={styles.addButton}
-                  onPress={() =>
-                    id === 'google' ? handleGoogleImport() : handleAddProvider(id, label)
-                  }
+                  onPress={() => {
+                    if (id === 'google') handleGoogleImport();
+                    else if (id === 'apple') setShowAppleForm((v) => !v);
+                    else handleAddProvider(id, label);
+                  }}
                   accessibilityRole="button"
                   accessibilityLabel={`Ajouter un compte ${label}`}
                 >
-                  <Text style={styles.addButtonText}>+</Text>
+                  <Text style={styles.addButtonText}>{id === 'apple' && showAppleForm ? '−' : '+'}</Text>
                 </Pressable>
               )}
             </View>
             {id === 'google' && googleError && (
               <Text style={styles.errorText}>{googleError}</Text>
+            )}
+            {id === 'apple' && showAppleForm && (
+              <View style={styles.appleForm}>
+                <Text style={styles.appleFormHelp}>
+                  Utilise un mot de passe d’application (pas ton mot de passe Apple habituel),
+                  généré gratuitement sur appleid.apple.com.
+                </Text>
+                <TextInput
+                  style={styles.appleFormInput}
+                  placeholder="Identifiant Apple"
+                  placeholderTextColor={colors.textMuted}
+                  value={appleId}
+                  onChangeText={setAppleId}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  accessibilityLabel="Identifiant Apple"
+                />
+                <TextInput
+                  style={styles.appleFormInput}
+                  placeholder="Mot de passe d’application"
+                  placeholderTextColor={colors.textMuted}
+                  value={applePassword}
+                  onChangeText={setApplePassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  accessibilityLabel="Mot de passe d'application"
+                />
+                {appleError && <Text style={styles.errorText}>{appleError}</Text>}
+                <Pressable
+                  style={[
+                    styles.appleFormSubmit,
+                    (!appleId.trim() || !applePassword.trim()) && styles.appleFormSubmitDisabled,
+                  ]}
+                  onPress={() => void handleAppleSubmit()}
+                  disabled={!appleId.trim() || !applePassword.trim()}
+                  accessibilityRole="button"
+                  accessibilityLabel="Se connecter à Apple Calendar"
+                >
+                  <Text style={styles.appleFormSubmitText}>Se connecter</Text>
+                </Pressable>
+              </View>
             )}
           </View>
         ))}
@@ -107,7 +173,7 @@ export function CalendarImportScreen({ navigation }: Props) {
         {hasImportedAccounts && (
           <>
             <Text style={styles.sectionTitle}>Comptes importés</Text>
-            {googleCalendars.map((calendar) => (
+            {importedCalendars.map((calendar) => (
               <View key={calendar.id} style={styles.importedRow}>
                 <Text style={styles.importedLabel}>{calendar.name}</Text>
                 <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
@@ -174,6 +240,39 @@ const styles = StyleSheet.create({
     marginTop: -8,
     marginBottom: 12,
   },
+  appleForm: {
+    marginTop: -4,
+    marginBottom: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+  },
+  appleFormHelp: {
+    fontSize: 12,
+    color: colors.textMuted,
+    lineHeight: 17,
+    marginBottom: 12,
+  },
+  appleFormInput: {
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    fontSize: 14,
+    color: colors.text,
+    marginBottom: 10,
+  },
+  appleFormSubmit: {
+    backgroundColor: colors.primary,
+    minHeight: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  appleFormSubmitDisabled: { opacity: 0.4 },
+  appleFormSubmitText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',

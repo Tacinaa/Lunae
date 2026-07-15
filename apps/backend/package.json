@@ -34,11 +34,13 @@
     "class-validator": "^0.15.1",
     "dotenv": "^17.4.2",
     "googleapis": "^173.0.0",
+    "node-ical": "^0.26.1",
     "nodemailer": "^9.0.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "tsdav": "^2.3.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -109,6 +111,12 @@
         "statements": 80
       },
       "**/google-calendar-event-mapper.ts": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      },
+      "**/apple-calendar-event-mapper.ts": {
         "branches": 80,
         "functions": 80,
         "lines": 80,

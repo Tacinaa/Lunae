@@ -182,8 +182,20 @@
   `com.lunae.app` (celui utilisé par défaut par `expo-auth-session` pour la redirection) ajouté à
   `app.json` — seul `lunae` y était déclaré, donc aucun intent-filter Android ne correspondait à la
   redirection OAuth, qui retombait sur la page d'accueil Google au lieu de revenir dans l'app.
-- [ ] `POST /calendars/import/apple` — CalDAV Apple → stocker credentials + sync initiale —
-  confirmé en scope Bloc 2 le 2026-07-15 (contrairement à Microsoft, cf. Backlog)
+- [x] `POST /calendars/import/apple` — CalDAV Apple → stocker credentials + sync initiale —
+  confirmé en scope Bloc 2 le 2026-07-15 (contrairement à Microsoft, cf. Backlog). Implémentation :
+  `AppleCalendarService` (`createDAVClient` de `tsdav`, auth Basic avec identifiant Apple + mot de
+  passe d'application), upsert `Calendar` par calendrier iCloud détecté (`source: apple`), sync des
+  90 prochains jours (`fetchCalendarObjects` + parsing ICS via `node-ical`), mapping événement ICS →
+  `Event` extrait en fonction pure testée (`apple-calendar-event-mapper.ts`). Formulaire dédié dans
+  `CalendarImportScreen` (identifiant + mot de passe d'application, avec aide contextuelle) et hook
+  `useAppleCalendarImport`. Contrairement à l'import Google (OAuth, cf. CR-09), CalDAV n'a pas de
+  contrainte de redirection propre à l'app — mais **non vérifié bout-en-bout sur device** : Expo Go
+  pour le SDK 57 (celui du projet) n'est pas encore disponible sur l'App Store iOS au 2026-07-15
+  (mise à jour en attente de review Apple, confirmé via le changelog Expo ;  déjà dispo côté
+  Android/Play Store). `eas go` (build TestFlight) débloquerait le test mais nécessite un compte
+  Apple Developer payant — décision du 2026-07-15 de ne pas payer pour cette certification, cf.
+  Backlog. Test manuel reporté au Bloc 3/4.
 
 ### Frontend — Écran 11 — Calendrier principal
 - [x] Grille mensuelle custom (ou `react-native-calendars`) — implémentation custom (`utils/calendarGrid.ts`), pas de dépendance ajoutée
@@ -354,9 +366,11 @@
     interactifs annoncés correctement (cf. Accessibilité) :
     - [x] TalkBack (Android) — validé par l'utilisateur sur device : les `accessibilityLabel`
       sont annoncés comme prévu (grille du calendrier avec la phase, onglets d'`InvitationsSheet`)
-    - [ ] VoiceOver (iOS) — un iPhone sera disponible le soir du 2026-07-15 ; testable via Expo Go
-      (gratuit, aucun module natif custom requis pour la navigation/lecture d'écran — contrairement
-      à l'import Google Calendar sur iOS, cf. CR-09 et Backlog), pas encore fait
+    - [ ] VoiceOver (iOS) — iPhone disponible le 2026-07-15 comme prévu, mais test bloqué : Expo Go
+      pour le SDK 57 du projet n'est pas encore sur l'App Store iOS (review Apple en attente,
+      contrairement à l'import Google qui lui était bloqué par un module natif custom, cf. CR-09).
+      `eas go`/TestFlight écarté (compte Apple Developer payant, hors scope certification). Reporté
+      au Bloc 3/4, cf. Backlog
 
 ### Accessibilité (WCAG AA)
 - [x] Vérifier ratio de contraste violet #6B3FA0 sur fond blanc (≥ 4.5:1) — 7.38:1, conforme (calcul luminance relative WCAG). Au passage, couleurs de phase vérifiées aussi (`utils/theme.ts`) : traits de phase 4.10–12.99:1 vs blanc (seuil 3:1 non-textuel), contour du jour suggéré 4.10:1
@@ -370,7 +384,8 @@
   bouton de reset dev (`MainCalendarScreen`)
 - Tester avec VoiceOver (iOS) et TalkBack (Android) — reporté au cahier de recette (cf. CR-13) :
   - [x] TalkBack (Android) — validé par l'utilisateur
-  - [ ] VoiceOver (iOS) — testable via Expo Go (gratuit) une fois l'iPhone disponible, cf. CR-13
+  - [ ] VoiceOver (iOS) — bloqué par l'absence de SDK 57 sur Expo Go iOS (App Store), reporté au
+    Bloc 3/4, cf. CR-13 et Backlog
 - [x] Chaque phase du cycle a couleur + icône + label texte (pas de dépendance couleur seule) —
   la grille du calendrier principal n'encodait la phase que par la couleur du trait sous chaque
   jour (violation WCAG 1.4.1, palette violet/magenta peu distinguable pour un daltonien) :
@@ -435,6 +450,12 @@
   Apple Developer payant (99$/an) — décision du 2026-07-15 de ne pas payer pour cette certification,
   contrairement au déploiement Railway (reporté, pas abandonné). VoiceOver (CR-13) reste testable
   sans ce compte via Expo Go, seul l'import Google est concerné par cette limite
+- **Tests manuels sur iPhone** (VoiceOver CR-13, import Apple Calendar CalDAV) — reportés au Bloc
+  3/4 le 2026-07-15 : Expo Go pour le SDK 57 du projet n'est pas encore approuvé sur l'App Store iOS
+  (build en attente de review Apple, déjà dispo côté Android). `eas go` (build TestFlight custom)
+  débloquerait immédiatement mais suppose un compte Apple Developer payant (99$/an), écarté pour la
+  même raison que l'import Google sur iOS (cf. ci-dessus). À retester dès que la review Apple aboutit,
+  sans coût ni action supplémentaire de notre côté
 - **Synchronisation incrémentale Google Calendar** (`POST /calendars/:id/sync`, via `syncToken`) —
   écarté du Bloc 2 le 2026-07-15 : le ré-import actuel refait déjà un pull complet idempotent des
   90 prochains jours (pas de doublon, cf. CR-09), suffisant fonctionnellement pour la démo ; une

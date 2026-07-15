@@ -88,6 +88,26 @@ export async function importGoogleCalendar(
   return data;
 }
 
+export interface ImportAppleCalendarPayload {
+  appleId: string;
+  appSpecificPassword: string;
+}
+
+export interface ImportAppleCalendarResult {
+  calendars: CalendarDto[];
+  importedEventCount: number;
+}
+
+export async function importAppleCalendar(
+  payload: ImportAppleCalendarPayload,
+): Promise<ImportAppleCalendarResult> {
+  const { data } = await apiClient.post<ImportAppleCalendarResult>(
+    '/calendars/import/apple',
+    payload,
+  );
+  return data;
+}
+
 export async function getEvents(from: string, to: string): Promise<EventDto[]> {
   const { data } = await apiClient.get<EventDto[]>('/events', { params: { from, to } });
   return data;

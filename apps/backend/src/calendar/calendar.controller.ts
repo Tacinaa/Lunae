@@ -5,7 +5,9 @@ import {
 } from '../auth/decorators/current-user.decorator.js';
 import { CalendarService } from './calendar.service.js';
 import { CreateCalendarDto } from './dto/create-calendar.dto.js';
+import { ImportAppleCalendarDto } from './dto/import-apple-calendar.dto.js';
 import { ImportGoogleCalendarDto } from './dto/import-google-calendar.dto.js';
+import { AppleCalendarService } from './apple-calendar.service.js';
 import { GoogleCalendarService } from './google-calendar.service.js';
 
 @Controller('calendars')
@@ -13,6 +15,7 @@ export class CalendarController {
   constructor(
     private calendars: CalendarService,
     private googleCalendar: GoogleCalendarService,
+    private appleCalendar: AppleCalendarService,
   ) {}
 
   @Get()
@@ -31,6 +34,14 @@ export class CalendarController {
     @Body() dto: ImportGoogleCalendarDto,
   ) {
     return this.googleCalendar.importPrimaryCalendar(user.userId, dto);
+  }
+
+  @Post('import/apple')
+  importApple(
+    @CurrentUser() user: JwtUser,
+    @Body() dto: ImportAppleCalendarDto,
+  ) {
+    return this.appleCalendar.importCalendars(user.userId, dto);
   }
 
   @Delete(':id')
