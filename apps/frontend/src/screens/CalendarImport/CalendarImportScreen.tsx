@@ -1,11 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../../components/BackButton';
 import type { OnboardingSetupStackParamList } from '../../navigation/types';
 import { colors } from '../../utils/theme';
+import { getCalendars, type CalendarDto } from '../../api/calendar';
+import { useGoogleCalendarImport } from '../../hooks/useGoogleCalendarImport';
 
 type Props = NativeStackScreenProps<OnboardingSetupStackParamList, 'CalendarImport'>;
 
@@ -25,6 +34,21 @@ const PROVIDERS: { id: Provider; label: string }[] = [
 
 export function CalendarImportScreen({ navigation }: Props) {
   const [importedAccounts, setImportedAccounts] = useState<ImportedAccount[]>([]);
+  const [googleCalendars, setGoogleCalendars] = useState<CalendarDto[]>([]);
+  const { startImport, loading: googleLoading, error: googleError } = useGoogleCalendarImport();
+
+  const refreshGoogleCalendars = async () => {
+    try {
+      const calendars = await getCalendars();
+      setGoogleCalendars(calendars.filter((calendar) => calendar.source === 'google'));
+    } catch {
+      // Liste laissée vide en cas d'échec réseau — ne bloque pas l'onboarding.
+    }
+  };
+
+  useEffect(() => {
+    refreshGoogleCalendars();
+  }, []);
 
   const handleAddProvider = (provider: Provider, label: string) => {
     setImportedAccounts((accounts) => [
@@ -33,9 +57,18 @@ export function CalendarImportScreen({ navigation }: Props) {
     ]);
   };
 
+  const handleGoogleImport = async () => {
+    const result = await startImport();
+    if (result) {
+      await refreshGoogleCalendars();
+    }
+  };
+
   const handleRemoveAccount = (id: string) => {
     setImportedAccounts((accounts) => accounts.filter((account) => account.id !== id));
   };
+
+  const hasImportedAccounts = importedAccounts.length > 0 || googleCalendars.length > 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -47,22 +80,39 @@ export function CalendarImportScreen({ navigation }: Props) {
         </Text>
 
         {PROVIDERS.map(({ id, label }) => (
-          <View key={id} style={styles.providerRow}>
-            <Text style={styles.providerLabel}>{label}</Text>
-            <Pressable
-              style={styles.addButton}
-              onPress={() => handleAddProvider(id, label)}
-              accessibilityRole="button"
-              accessibilityLabel={`Ajouter un compte ${label}`}
-            >
-              <Text style={styles.addButtonText}>+</Text>
-            </Pressable>
+          <View key={id}>
+            <View style={styles.providerRow}>
+              <Text style={styles.providerLabel}>{label}</Text>
+              {id === 'google' && googleLoading ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <Pressable
+                  style={styles.addButton}
+                  onPress={() =>
+                    id === 'google' ? handleGoogleImport() : handleAddProvider(id, label)
+                  }
+                  accessibilityRole="button"
+                  accessibilityLabel={`Ajouter un compte ${label}`}
+                >
+                  <Text style={styles.addButtonText}>+</Text>
+                </Pressable>
+              )}
+            </View>
+            {id === 'google' && googleError && (
+              <Text style={styles.errorText}>{googleError}</Text>
+            )}
           </View>
         ))}
 
-        {importedAccounts.length > 0 && (
+        {hasImportedAccounts && (
           <>
             <Text style={styles.sectionTitle}>Comptes importés</Text>
+            {googleCalendars.map((calendar) => (
+              <View key={calendar.id} style={styles.importedRow}>
+                <Text style={styles.importedLabel}>{calendar.name}</Text>
+                <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+              </View>
+            ))}
             {importedAccounts.map((account) => (
               <View key={account.id} style={styles.importedRow}>
                 <Text style={styles.importedLabel}>{account.label}</Text>
@@ -118,6 +168,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addButtonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '600', lineHeight: 20 },
+  errorText: {
+    fontSize: 13,
+    color: colors.danger,
+    marginTop: -8,
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',

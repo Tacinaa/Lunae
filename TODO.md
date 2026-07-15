@@ -162,7 +162,18 @@
 - [x] `PATCH /events/:id` — modifier un événement
 - [x] `DELETE /events/:id` — supprimer un événement
 - [x] `GET /events/search?q=` — recherche plein texte (ILIKE sur title)
-- [ ] `POST /calendars/import/google` — OAuth2 Google Calendar → stocker token + sync initiale
+- [x] `POST /calendars/import/google` — OAuth2 PKCE (Android/iOS, clients publics, pas de client
+  secret) + `googleapis`/`google-auth-library` réexporté via `google.auth.OAuth2` (évite un conflit
+  de types entre les copies internes de `google-auth-library` embarquées par `googleapis`). Échange
+  le code d'autorisation, upsert `Calendar` (`source: google`, tokens chiffrés AES-256-GCM avec une
+  clé dédiée `GOOGLE_TOKEN_ENCRYPTION_KEY`, séparée de celle des notes de cycle — extraction d'un
+  utilitaire crypto commun `common/crypto.util.ts` réutilisé par les deux), puis sync initiale des
+  90 prochains jours du calendrier principal via `prisma.event.createMany` (contourne
+  `EventService.create()` pour ne pas déclencher une suggestion par événement importé).
+  `isMovable: false` sur tous les événements importés (pas d'écriture vers Google en MVP). Mapping
+  Google → `Event` extrait en fonction pure testée (`google-calendar-event-mapper.ts`, 14 tests).
+  Implémentation posée le 2026-07-15, vérification manuelle bout-en-bout (cf. CR-09) en attente de
+  la config Google Cloud Console côté utilisateur.
 - [ ] `POST /calendars/import/apple` — CalDAV Apple → stocker credentials + sync initiale
 - [ ] `POST /calendars/import/microsoft` — OAuth2 Microsoft → stocker token + sync initiale
 - [ ] `POST /calendars/:id/sync` — synchronisation incrémentale (syncToken)
@@ -286,13 +297,13 @@
   `authStore.ts`, `cycleStore.ts`, `useDebouncedValue.ts`. Seuils vérifiés fonctionnels (testé
   qu'un seuil intentionnellement cassé fait échouer `test:cov`, pas juste silencieusement ignoré).
 - [x] Passer tous les tests unitaires définis en v0.1, v0.2, v0.3 et v0.4 au vert (aucun test e2e
-  prévu — hors scope du projet) — 37 tests backend, 41 tests frontend, tous verts
+  prévu — hors scope du projet) — 58 tests backend, 47 tests frontend, tous verts
 - [ ] Cahier de recette — vérifier manuellement CR-01 à CR-13. CR-01/02/03/04/05/07/08/10/11/12
   vérifiés par appels API réels (curl) sur une instance backend isolée (port 3002, même BDD),
   compte de test créé puis supprimé via `DELETE /users/me` en fin de vérification (double usage :
   nettoyage + revalidation de l'endpoint via un vrai appel HTTP). CR-06 confirmé par l'utilisateur
-  sur device. CR-09 reste ouvert (import non implémenté) ; CR-13 partiellement fait (TalkBack
-  validé, VoiceOver en attente d'un test sur iPhone) :
+  sur device. CR-09 implémenté, vérification manuelle en attente (config Google Cloud Console en
+  cours) ; CR-13 partiellement fait (TalkBack validé, VoiceOver en attente d'un test sur iPhone) :
   - [x] CR-01 : Inscription email valide → OTP reçu — 201, OTP `236583` généré et loggé
   - [x] CR-02 : Email déjà utilisé → erreur claire — 409 "Email déjà utilisé"
   - [x] CR-03 : OTP correct → accès accordé — 200, access + refresh token émis
@@ -305,8 +316,10 @@
     ovulation, score 3)
   - [x] CR-08 : Accepter une suggestion → événement déplacé — `POST /suggestions/:id/accept` →
     suggestion "accepted", `startAt`/`endAt` de l'événement mis à jour à la date suggérée
-  - [ ] CR-09 : Import Google Calendar → événements visibles — fonctionnalité non implémentée
-    (v0.3 résiduel, cf. import calendriers externes), non testable en l'état
+  - [ ] CR-09 : Import Google Calendar → événements visibles — implémenté le 2026-07-15
+    (`POST /calendars/import/google`, cf. v0.3), reste à vérifier en conditions réelles une fois
+    la config Google Cloud Console (OAuth consent screen + clients Android/iOS) faite côté
+    utilisateur et un dev-client buildé (`npx expo run:android`)
   - [x] CR-10 : Recherche "Boxe" → résultats filtrés — `GET /events/search?q=Boxe` → 1 résultat,
     insensible à la casse
   - [x] CR-11 : Accepter invitation → statut "Accepté" — `PATCH /invitations/:id` →

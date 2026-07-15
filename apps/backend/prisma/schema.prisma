@@ -97,17 +97,22 @@ model CyclePhase {
 }
 
 model Calendar {
-  id         String         @id @default(uuid())
-  userId     String
-  name       String
-  color      String         @default("#6B3FA0")
-  source     CalendarSource @default(local)
-  externalId String?
-  syncToken  String?
-  createdAt  DateTime       @default(now())
+  id             String         @id @default(uuid())
+  userId         String
+  name           String
+  color          String         @default("#6B3FA0")
+  source         CalendarSource @default(local)
+  externalId     String?
+  syncToken      String?
+  accessToken    String?
+  refreshToken   String?
+  tokenExpiresAt DateTime?
+  createdAt      DateTime       @default(now())
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   events Event[]
+
+  @@unique([userId, source, externalId])
 }
 
 model Event {
@@ -130,6 +135,8 @@ model Event {
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   suggestions MoveSuggestion[]
   invitations Invitation[]
+
+  @@unique([calendarId, externalId])
 }
 
 model MoveSuggestion {

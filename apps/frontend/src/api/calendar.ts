@@ -66,6 +66,28 @@ export async function createCalendar(payload: CreateCalendarPayload): Promise<Ca
   return data;
 }
 
+export interface ImportGoogleCalendarPayload {
+  code: string;
+  redirectUri: string;
+  codeVerifier: string;
+  platform: 'android' | 'ios';
+}
+
+export interface ImportGoogleCalendarResult {
+  calendar: CalendarDto;
+  importedEventCount: number;
+}
+
+export async function importGoogleCalendar(
+  payload: ImportGoogleCalendarPayload,
+): Promise<ImportGoogleCalendarResult> {
+  const { data } = await apiClient.post<ImportGoogleCalendarResult>(
+    '/calendars/import/google',
+    payload,
+  );
+  return data;
+}
+
 export async function getEvents(from: string, to: string): Promise<EventDto[]> {
   const { data } = await apiClient.get<EventDto[]>('/events', { params: { from, to } });
   return data;
