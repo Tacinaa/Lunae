@@ -182,9 +182,8 @@
   `com.lunae.app` (celui utilisé par défaut par `expo-auth-session` pour la redirection) ajouté à
   `app.json` — seul `lunae` y était déclaré, donc aucun intent-filter Android ne correspondait à la
   redirection OAuth, qui retombait sur la page d'accueil Google au lieu de revenir dans l'app.
-- [ ] `POST /calendars/import/apple` — CalDAV Apple → stocker credentials + sync initiale
-- [ ] `POST /calendars/import/microsoft` — OAuth2 Microsoft → stocker token + sync initiale
-- [ ] `POST /calendars/:id/sync` — synchronisation incrémentale (syncToken)
+- [ ] `POST /calendars/import/apple` — CalDAV Apple → stocker credentials + sync initiale —
+  confirmé en scope Bloc 2 le 2026-07-15 (contrairement à Microsoft, cf. Backlog)
 
 ### Frontend — Écran 11 — Calendrier principal
 - [x] Grille mensuelle custom (ou `react-native-calendars`) — implémentation custom (`utils/calendarGrid.ts`), pas de dépendance ajoutée
@@ -259,6 +258,12 @@
 
 ## v1.0 — MVP complet : CI/CD + Déploiement + QA (J+14)
 
+> **Repère certification (2026-07-15)** : ce TODO ne suit que le scope du Bloc 2 (dossier écrit). Le
+> Bloc 2 exige de documenter le protocole de déploiement et le pipeline CI/CD, pas d'avoir une
+> instance backend ou un binaire mobile actifs en permanence — les tâches d'activation réelle
+> (compte Railway + `railway up`, `eas build --profile preview/production`) sont donc entièrement
+> sorties de ce fichier et déplacées dans le Backlog en bas de document (scope Bloc 3).
+
 ### Infrastructure
 - [x] Créer `Dockerfile` pour le backend NestJS (multi-stage build) — `node:22-slim` (pas Alpine :
   `bcrypt` a des bindings natifs qui utilisent les binaires prébuilts glibc, évite un build gcc/python
@@ -272,14 +277,9 @@
   (SMTP non configuré + `NODE_ENV=production` → `MailService` refuse le fallback console, comportement
   voulu, pas un bug).
 - [x] Créer `docker-compose.yml` pour développement local (PostgreSQL ; backend pas encore containerisé)
-- [ ] Configurer les variables d'environnement sur Railway (secrets) — plateforme choisie le
-  2026-07-15 (CLI scriptable, PostgreSQL managé en une commande, build direct depuis le Dockerfile
-  existant sans configuration via dashboard — contrairement à Render, plus orienté UI web). Pas
-  encore fait : nécessite un compte Railway (voir `DEPLOIEMENT.md` pour le manuel complet et la
-  justification du calendrier — activation prévue à l'approche du Bloc 3, pas maintenant, pour
-  éviter un coût récurrent inutile pendant la rédaction du dossier)
-- [ ] Déployer le backend sur Railway — `apps/backend/railway.json` posé (build via Dockerfile),
-  pas encore exécuté (cf. ligne précédente)
+- [x] Préparer la configuration de déploiement Railway (`railway.json`, manuel dans
+  `DEPLOIEMENT.md`) — l'activation réelle (compte Railway, variables, `railway up`) est hors scope
+  Bloc 2, cf. Backlog
 
 ### CI/CD (GitHub Actions)
 - [x] Créer `.github/workflows/ci.yml` (mis en place dès v0.1 plutôt qu'à la fin, pour attraper les régressions au fil de l'eau) :
@@ -338,7 +338,11 @@
     dev-client buildé via EAS Build cloud (Android), consentement Google réel, calendrier +
     événements du compte de test importés et visibles dans l'app, ré-import sans doublon
     (cf. v0.3 pour le détail des deux ajustements OAuth nécessaires en cours de route). iOS non
-    testé, faute d'iPhone — même limite que CR-13
+    testé et hors scope de cette certification (cf. Backlog) : le test nécessiterait un dev-client
+    EAS (comme pour Android), impossible via Expo Go seul (le flux OAuth redirige vers
+    `com.lunae.app:/oauthredirect`, un schéma propre à l'app, qu'Expo Go — qui tourne sous sa
+    propre identité `host.exp.Exponent` — ne peut pas intercepter), et un dev-client EAS iOS
+    suppose un compte Apple Developer payant (99$/an), non prévu pour cette certification
   - [x] CR-10 : Recherche "Boxe" → résultats filtrés — `GET /events/search?q=Boxe` → 1 résultat,
     insensible à la casse
   - [x] CR-11 : Accepter invitation → statut "Accepté" — `PATCH /invitations/:id` →
@@ -350,8 +354,9 @@
     interactifs annoncés correctement (cf. Accessibilité) :
     - [x] TalkBack (Android) — validé par l'utilisateur sur device : les `accessibilityLabel`
       sont annoncés comme prévu (grille du calendrier avec la phase, onglets d'`InvitationsSheet`)
-    - [ ] VoiceOver (iOS) — pas d'iPhone disponible pour l'instant ; prévu via un build EAS
-      (`eas build --profile preview`) installé directement sur iPhone plutôt que via Expo Go
+    - [ ] VoiceOver (iOS) — un iPhone sera disponible le soir du 2026-07-15 ; testable via Expo Go
+      (gratuit, aucun module natif custom requis pour la navigation/lecture d'écran — contrairement
+      à l'import Google Calendar sur iOS, cf. CR-09 et Backlog), pas encore fait
 
 ### Accessibilité (WCAG AA)
 - [x] Vérifier ratio de contraste violet #6B3FA0 sur fond blanc (≥ 4.5:1) — 7.38:1, conforme (calcul luminance relative WCAG). Au passage, couleurs de phase vérifiées aussi (`utils/theme.ts`) : traits de phase 4.10–12.99:1 vs blanc (seuil 3:1 non-textuel), contour du jour suggéré 4.10:1
@@ -365,7 +370,7 @@
   bouton de reset dev (`MainCalendarScreen`)
 - Tester avec VoiceOver (iOS) et TalkBack (Android) — reporté au cahier de recette (cf. CR-13) :
   - [x] TalkBack (Android) — validé par l'utilisateur
-  - [ ] VoiceOver (iOS) — prévu via build EAS installé sur iPhone
+  - [ ] VoiceOver (iOS) — testable via Expo Go (gratuit) une fois l'iPhone disponible, cf. CR-13
 - [x] Chaque phase du cycle a couleur + icône + label texte (pas de dépendance couleur seule) —
   la grille du calendrier principal n'encodait la phase que par la couleur du trait sous chaque
   jour (violation WCAG 1.4.1, palette violet/magenta peu distinguable pour un daltonien) :
@@ -408,14 +413,32 @@
   Expo lié (`eas login` + `eas init`), projet créé : `@tacina/frontend` (projectId dans
   `app.json`/`extra.eas.projectId`). `eas.json` généré via `eas build:configure --platform all`
   (profils standards, pas modifiés à la main pour rester compatible avec la version d'`eas-cli`
-  installée). `eas-cli` ajouté en devDependency.
-- [ ] `eas build --platform all --profile preview` → générer les binaires de test — pas encore
-  lancé (build cloud ~10-20 min, à faire quand un binaire de test est nécessaire)
+  installée). `eas-cli` ajouté en devDependency. Un build `development` a servi à valider l'import
+  Google Calendar sur device réel (cf. CR-09). Le lancement d'un build `preview`/`production` est
+  hors scope Bloc 2, cf. Backlog.
 
 ---
 
 ## Backlog post-MVP (hors scope)
 
+- **Activer le déploiement Railway** (scope Bloc 3) — créer le compte, configurer les variables
+  d'environnement, `railway up` ; manuel complet déjà rédigé dans `DEPLOIEMENT.md`, config déjà
+  posée (`apps/backend/railway.json`, job CI `deploy` prêt mais inactif tant que `RAILWAY_TOKEN`
+  n'existe pas)
+- **Lancer un build EAS `preview`/`production`** (scope Bloc 3) — `eas build --platform all
+  --profile preview`, pour avoir un binaire installable par lien à montrer/faire tester sans
+  dépendre d'un PC allumé avec Metro ; `eas.json` déjà configuré
+- **Import Microsoft Outlook** (`POST /calendars/import/microsoft`, OAuth2) — remis à plus tard le
+  2026-07-15 pour prioriser l'import Apple (CalDAV) ; Google déjà fait (cf. CR-09)
+- **Import Google Calendar sur iOS** — code déjà prêt côté backend/frontend (client OAuth iOS
+  configuré), jamais testé en conditions réelles. Nécessite un dev-client EAS iOS, donc un compte
+  Apple Developer payant (99$/an) — décision du 2026-07-15 de ne pas payer pour cette certification,
+  contrairement au déploiement Railway (reporté, pas abandonné). VoiceOver (CR-13) reste testable
+  sans ce compte via Expo Go, seul l'import Google est concerné par cette limite
+- **Synchronisation incrémentale Google Calendar** (`POST /calendars/:id/sync`, via `syncToken`) —
+  écarté du Bloc 2 le 2026-07-15 : le ré-import actuel refait déjà un pull complet idempotent des
+  90 prochains jours (pas de doublon, cf. CR-09), suffisant fonctionnellement pour la démo ; une
+  vraie sync incrémentale n'apporterait rien de visible pour la certification
 - Abonnement premium / Stripe
 - Journalisation des symptômes
 - Partage de calendrier avec un partenaire
