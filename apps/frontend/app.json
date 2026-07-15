@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "scheme": "lunae",
+    "scheme": ["lunae", "com.lunae.app"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lunae.app"
