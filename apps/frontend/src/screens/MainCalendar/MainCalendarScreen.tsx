@@ -311,39 +311,45 @@ export function MainCalendarScreen(_props: Props) {
                 })}
               </View>
 
-              {banners.map((banner) => {
-                const calendarColor = banner.event.calendar?.color ?? colors.primary;
-                return (
-                  <View key={`${banner.event.id}-${banner.row}`} style={styles.bannerRow}>
-                    {banner.startCol > 0 && <View style={{ flex: banner.startCol }} />}
-                    <Pressable
-                      onPress={() => setDetailEvent(banner.event)}
-                      style={[styles.banner, { flex: banner.span, backgroundColor: hexToRgba(calendarColor, 0.22) }]}
-                      accessibilityRole="button"
-                      accessibilityLabel={banner.event.title}
-                    >
-                      <Text numberOfLines={1} style={[styles.bannerText, { color: calendarColor }]}>
-                        {banner.event.title}
-                      </Text>
-                    </Pressable>
-                    {banner.startCol + banner.span < 7 && (
-                      <View style={{ flex: 7 - banner.startCol - banner.span }} />
-                    )}
-                  </View>
-                );
-              })}
-
               <View style={styles.weekRow}>
-                {week.map((day) => {
+                {week.map((day, dayIndex) => {
                   const dateKey = toDateKey(day);
                   const isCurrentMonth = day.getUTCMonth() === visibleMonth;
                   const dayEvents = eventsByDate.get(dateKey) ?? [];
+                  const dayBanners = banners
+                    .filter((b) => dayIndex >= b.startCol && dayIndex < b.startCol + b.span)
+                    .sort((a, b) => a.row - b.row);
 
                   return (
                     <View
                       key={dateKey}
                       style={[styles.pillsCell, !isCurrentMonth && styles.dayCellOutside]}
                     >
+                      {dayBanners.map((banner) => {
+                        const isStart = dayIndex === banner.startCol;
+                        const isEnd = dayIndex === banner.startCol + banner.span - 1;
+                        const calendarColor = banner.event.calendar?.color ?? colors.primary;
+                        return (
+                          <Pressable
+                            key={`${banner.event.id}-${banner.row}`}
+                            onPress={() => setDetailEvent(banner.event)}
+                            style={[
+                              styles.bannerSegment,
+                              { backgroundColor: hexToRgba(calendarColor, 0.22) },
+                              isStart && styles.bannerSegmentStart,
+                              isEnd && styles.bannerSegmentEnd,
+                            ]}
+                            accessibilityRole="button"
+                            accessibilityLabel={banner.event.title}
+                          >
+                            {isStart && (
+                              <Text numberOfLines={1} style={[styles.bannerText, { color: calendarColor }]}>
+                                {banner.event.title}
+                              </Text>
+                            )}
+                          </Pressable>
+                        );
+                      })}
                       {dayEvents.slice(0, 2).map((event) => {
                         const calendarColor = event.calendar?.color ?? colors.primary;
                         return (
@@ -556,13 +562,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   dayCellOutside: { opacity: 0.35 },
-  bannerRow: { flexDirection: 'row', paddingHorizontal: 2, marginTop: 2 },
-  banner: {
-    borderRadius: 5,
+  bannerSegment: {
+    height: 18,
+    justifyContent: 'center',
     paddingHorizontal: 4,
-    paddingVertical: 2,
-    marginHorizontal: 1,
+    marginTop: 2,
+    marginHorizontal: -2,
   },
+  bannerSegmentStart: { borderTopLeftRadius: 5, borderBottomLeftRadius: 5 },
+  bannerSegmentEnd: { borderTopRightRadius: 5, borderBottomRightRadius: 5 },
   bannerText: { fontSize: 9, fontWeight: '600' },
   dayNumberWrap: {
     alignSelf: 'center',
