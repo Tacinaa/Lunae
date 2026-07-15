@@ -43,6 +43,73 @@ export function dateKeysInRange(startAt: Date, endAt: Date, endExclusive: boolea
   return keys.length > 0 ? keys : [toDateKey(start)];
 }
 
+export interface MultiDayEventLike {
+  id: string;
+  startAt: string | Date;
+  endAt: string | Date;
+  isAllDay: boolean;
+}
+
+export interface WeekBanner<T> {
+  event: T;
+  row: number;
+  startCol: number;
+  span: number;
+}
+
+/**
+ * Calcule, pour une semaine donnée, la position (colonne de départ + largeur en colonnes)
+ * de chaque événement multi-jours qui la chevauche, avec un empilement en lignes (`row`)
+ * pour les événements qui se chevauchent entre eux (algorithme glouton : chaque événement
+ * prend la première ligne libre sur sa plage de colonnes). Les événements mono-jour sont
+ * ignorés (à afficher séparément, jour par jour).
+ */
+export function layoutWeekBanners<T extends MultiDayEventLike>(
+  week: Date[],
+  events: T[],
+): WeekBanner<T>[] {
+  const weekKeys = week.map(toDateKey);
+
+  interface Segment {
+    event: T;
+    startCol: number;
+    span: number;
+  }
+
+  const segments: Segment[] = [];
+  for (const event of events) {
+    const keys = dateKeysInRange(new Date(event.startAt), new Date(event.endAt), event.isAllDay);
+    if (keys.length <= 1) continue;
+
+    const cols = keys.map((k) => weekKeys.indexOf(k)).filter((i) => i !== -1);
+    if (cols.length === 0) continue;
+
+    const startCol = Math.min(...cols);
+    const endCol = Math.max(...cols);
+    segments.push({ event, startCol, span: endCol - startCol + 1 });
+  }
+
+  segments.sort((a, b) => a.startCol - b.startCol);
+
+  const rows: Segment[][] = [];
+  const result: WeekBanner<T>[] = [];
+  for (const seg of segments) {
+    let rowIndex = rows.findIndex(
+      (row) =>
+        !row.some(
+          (r) => seg.startCol < r.startCol + r.span && r.startCol < seg.startCol + seg.span,
+        ),
+    );
+    if (rowIndex === -1) {
+      rowIndex = rows.length;
+      rows.push([]);
+    }
+    rows[rowIndex].push(seg);
+    result.push({ event: seg.event, row: rowIndex, startCol: seg.startCol, span: seg.span });
+  }
+  return result;
+}
+
 /** Grille de 6 semaines (lundi→dimanche) couvrant intégralement le mois donné. */
 export function getMonthMatrix(year: number, month: number): Date[][] {
   const firstOfMonth = new Date(Date.UTC(year, month, 1));

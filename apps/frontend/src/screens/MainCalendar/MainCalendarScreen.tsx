@@ -18,6 +18,7 @@ import {
   dateKeysInRange,
   getMonthMatrix,
   isSameDay,
+  layoutWeekBanners,
   toDateKey,
 } from '../../utils/calendarGrid';
 import { getErrorMessage } from '../../utils/errors';
@@ -29,6 +30,7 @@ import { useGoogleCalendarImport } from '../../hooks/useGoogleCalendarImport';
 type Props = NativeStackScreenProps<AppStackParamList, 'MainCalendar'>;
 
 const TITLE_MAX_CHARS = 12;
+const MAX_BANNER_ROWS = 2;
 
 function truncate(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
@@ -118,20 +120,28 @@ export function MainCalendarScreen(_props: Props) {
     return map;
   }, [phases]);
 
+  const visibleEvents = useMemo(
+    () => events.filter((e) => !hiddenCalendarIds.has(e.calendarId)),
+    [events, hiddenCalendarIds],
+  );
+
   const eventsByDate = useMemo(() => {
     const map = new Map<string, EventDto[]>();
-    events
-      .filter((e) => !hiddenCalendarIds.has(e.calendarId))
-      .forEach((e) => {
-        const keys = dateKeysInRange(new Date(e.startAt), new Date(e.endAt), e.isAllDay);
-        keys.forEach((key) => {
-          const list = map.get(key) ?? [];
-          list.push(e);
-          map.set(key, list);
-        });
-      });
+    visibleEvents.forEach((e) => {
+      const keys = dateKeysInRange(new Date(e.startAt), new Date(e.endAt), e.isAllDay);
+      if (keys.length > 1) return; // affiché en bandeau, cf. multiDayEvents
+      map.set(keys[0], [...(map.get(keys[0]) ?? []), e]);
+    });
     return map;
-  }, [events, hiddenCalendarIds]);
+  }, [visibleEvents]);
+
+  const multiDayEvents = useMemo(
+    () =>
+      visibleEvents.filter(
+        (e) => dateKeysInRange(new Date(e.startAt), new Date(e.endAt), e.isAllDay).length > 1,
+      ),
+    [visibleEvents],
+  );
 
   const goToPreviousMonth = () => {
     const prev = new Date(Date.UTC(visibleYear, visibleMonth - 1, 1));
@@ -239,63 +249,109 @@ export function MainCalendarScreen(_props: Props) {
 
       <ScrollView style={styles.grid} contentContainerStyle={styles.gridContent}>
         {isLoading && <ActivityIndicator color={colors.primary} style={styles.loader} />}
-        {weeks.map((week) => (
-          <View key={toDateKey(week[0])} style={styles.weekRow}>
-            {week.map((day) => {
-              const dateKey = toDateKey(day);
-              const phase = phaseByDate.get(dateKey);
-              const isCurrentMonth = day.getUTCMonth() === visibleMonth;
-              const isToday = isSameDay(day, today);
-              const dayEvents = eventsByDate.get(dateKey) ?? [];
+        {weeks.map((week) => {
+          const banners = layoutWeekBanners(week, multiDayEvents).slice(0, MAX_BANNER_ROWS);
 
-              return (
-                <View key={dateKey} style={[styles.dayCell, !isCurrentMonth && styles.dayCellOutside]}>
-                  <View
-                    style={[styles.dayNumberWrap, isToday && styles.todayCircle]}
-                    accessible
-                    accessibilityLabel={dayAccessibilityLabel(day, phase)}
-                  >
-                    <Text
-                      style={[
-                        styles.dayNumber,
-                        !isCurrentMonth && styles.dayNumberOutside,
-                        isToday && styles.todayNumber,
-                      ]}
+          return (
+            <View key={toDateKey(week[0])} style={styles.weekBlock}>
+              <View style={styles.weekRow}>
+                {week.map((day) => {
+                  const dateKey = toDateKey(day);
+                  const phase = phaseByDate.get(dateKey);
+                  const isCurrentMonth = day.getUTCMonth() === visibleMonth;
+                  const isToday = isSameDay(day, today);
+                  return (
+                    <View
+                      key={dateKey}
+                      style={[styles.dayNumberCell, !isCurrentMonth && styles.dayCellOutside]}
                     >
-                      {day.getUTCDate()}
-                    </Text>
-                  </View>
-                  {dayEvents.slice(0, 2).map((event) => {
-                    const calendarColor = event.calendar?.color ?? colors.primary;
-                    return (
-                      <Pressable
-                        key={event.id}
-                        onPress={() => setDetailEvent(event)}
-                        style={[styles.eventPill, { backgroundColor: hexToRgba(calendarColor, 0.22) }]}
-                        accessibilityRole="button"
-                        accessibilityLabel={event.title}
+                      <View
+                        style={[styles.dayNumberWrap, isToday && styles.todayCircle]}
+                        accessible
+                        accessibilityLabel={dayAccessibilityLabel(day, phase)}
                       >
-                        <Text numberOfLines={1} style={[styles.eventPillText, { color: calendarColor }]}>
-                          {truncate(event.title, TITLE_MAX_CHARS)}
+                        <Text
+                          style={[
+                            styles.dayNumber,
+                            !isCurrentMonth && styles.dayNumberOutside,
+                            isToday && styles.todayNumber,
+                          ]}
+                        >
+                          {day.getUTCDate()}
                         </Text>
-                      </Pressable>
-                    );
-                  })}
-                  {phase && (
-                    <View style={styles.phaseSegmentsRow}>
-                      {Array.from({ length: getPhaseSegmentCount(phase) }).map((_, i) => (
-                        <View
-                          key={i}
-                          style={[styles.phaseSegment, { backgroundColor: getPhaseColor(phase) }]}
-                        />
-                      ))}
+                      </View>
                     </View>
-                  )}
-                </View>
-              );
-            })}
-          </View>
-        ))}
+                  );
+                })}
+              </View>
+
+              {banners.map((banner) => {
+                const calendarColor = banner.event.calendar?.color ?? colors.primary;
+                return (
+                  <View key={`${banner.event.id}-${banner.row}`} style={styles.bannerRow}>
+                    {banner.startCol > 0 && <View style={{ flex: banner.startCol }} />}
+                    <Pressable
+                      onPress={() => setDetailEvent(banner.event)}
+                      style={[styles.banner, { flex: banner.span, backgroundColor: hexToRgba(calendarColor, 0.22) }]}
+                      accessibilityRole="button"
+                      accessibilityLabel={banner.event.title}
+                    >
+                      <Text numberOfLines={1} style={[styles.bannerText, { color: calendarColor }]}>
+                        {banner.event.title}
+                      </Text>
+                    </Pressable>
+                    {banner.startCol + banner.span < 7 && (
+                      <View style={{ flex: 7 - banner.startCol - banner.span }} />
+                    )}
+                  </View>
+                );
+              })}
+
+              <View style={styles.weekRow}>
+                {week.map((day) => {
+                  const dateKey = toDateKey(day);
+                  const phase = phaseByDate.get(dateKey);
+                  const isCurrentMonth = day.getUTCMonth() === visibleMonth;
+                  const dayEvents = eventsByDate.get(dateKey) ?? [];
+
+                  return (
+                    <View
+                      key={dateKey}
+                      style={[styles.dayContentCell, !isCurrentMonth && styles.dayCellOutside]}
+                    >
+                      {dayEvents.slice(0, 2).map((event) => {
+                        const calendarColor = event.calendar?.color ?? colors.primary;
+                        return (
+                          <Pressable
+                            key={event.id}
+                            onPress={() => setDetailEvent(event)}
+                            style={[styles.eventPill, { backgroundColor: hexToRgba(calendarColor, 0.22) }]}
+                            accessibilityRole="button"
+                            accessibilityLabel={event.title}
+                          >
+                            <Text numberOfLines={1} style={[styles.eventPillText, { color: calendarColor }]}>
+                              {truncate(event.title, TITLE_MAX_CHARS)}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                      {phase && (
+                        <View style={styles.phaseSegmentsRow}>
+                          {Array.from({ length: getPhaseSegmentCount(phase) }).map((_, i) => (
+                            <View
+                              key={i}
+                              style={[styles.phaseSegment, { backgroundColor: getPhaseColor(phase) }]}
+                            />
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          );
+        })}
       </ScrollView>
 
       <View style={styles.bottomBar}>
@@ -464,16 +520,30 @@ const styles = StyleSheet.create({
   grid: { flex: 1 },
   gridContent: { paddingHorizontal: 8, paddingBottom: 16 },
   loader: { marginVertical: 8 },
+  weekBlock: { marginBottom: 2 },
   weekRow: { flexDirection: 'row' },
-  dayCell: {
+  dayNumberCell: {
     flex: 1,
-    minHeight: 68,
     alignItems: 'stretch',
     paddingHorizontal: 2,
     paddingTop: 4,
+  },
+  dayContentCell: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: 'stretch',
+    paddingHorizontal: 2,
     paddingBottom: 6,
   },
   dayCellOutside: { opacity: 0.35 },
+  bannerRow: { flexDirection: 'row', paddingHorizontal: 2, marginTop: 2 },
+  banner: {
+    borderRadius: 5,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    marginHorizontal: 1,
+  },
+  bannerText: { fontSize: 9, fontWeight: '600' },
   dayNumberWrap: {
     alignSelf: 'center',
     width: 24,
