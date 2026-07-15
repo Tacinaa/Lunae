@@ -45,6 +45,17 @@ function withHours(date: Date, hours: number): Date {
   return result;
 }
 
+/**
+ * Ancre le jour calendrier local choisi par l'utilisatrice à minuit UTC — convention déjà
+ * utilisée par le mapping des événements Google importés (google-calendar-event-mapper.ts)
+ * et par le calcul des jours couverts dans la grille (dateKeysInRange). Utiliser l'heure
+ * locale au lieu de minuit UTC ferait apparaître un horaire du type "02:00" dans le détail
+ * de l'événement, comme observé sur les imports avant correction.
+ */
+function toUtcMidnight(date: Date): Date {
+  return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+}
+
 export function CreateEventModal({
   visible,
   calendars,
@@ -63,6 +74,7 @@ export function CreateEventModal({
   const [eventType, setEventType] = useState<EventType>('other');
   const [date, setDate] = useState(defaultDate);
   const [referenceDate, setReferenceDate] = useState(defaultDate);
+  const [isAllDay, setIsAllDay] = useState(false);
   const [startTime, setStartTime] = useState(() => withHours(defaultDate, 9));
   const [endTime, setEndTime] = useState(() => withHours(defaultDate, 10));
   const [activePicker, setActivePicker] = useState<ActivePicker>(null);
@@ -81,6 +93,7 @@ export function CreateEventModal({
       setEventType(event.eventType);
       setDate(new Date(event.startAt));
       setReferenceDate(new Date(event.startAt));
+      setIsAllDay(event.isAllDay);
       setStartTime(new Date(event.startAt));
       setEndTime(new Date(event.endAt));
     } else {
@@ -91,6 +104,7 @@ export function CreateEventModal({
       setEventType('other');
       setDate(defaultDate);
       setReferenceDate(defaultDate);
+      setIsAllDay(false);
       setStartTime(withHours(defaultDate, 9));
       setEndTime(withHours(defaultDate, 10));
     }
@@ -119,8 +133,10 @@ export function CreateEventModal({
     setError(null);
     setIsSubmitting(true);
     try {
-      const startAt = combineDateAndTime(date, startTime);
-      const endAt = combineDateAndTime(date, endTime);
+      const startAt = isAllDay ? toUtcMidnight(date) : combineDateAndTime(date, startTime);
+      const endAt = isAllDay
+        ? new Date(toUtcMidnight(date).getTime() + 24 * 60 * 60 * 1000)
+        : combineDateAndTime(date, endTime);
       const payload = {
         calendarId: resolvedCalendarId,
         title: title.trim(),
@@ -129,6 +145,7 @@ export function CreateEventModal({
         location: location.trim() || undefined,
         notes: notes.trim() || undefined,
         eventType,
+        isAllDay,
       };
       const saved = event ? await updateEvent(event.id, payload) : await createEvent(payload);
       onSaved(saved);
@@ -165,7 +182,19 @@ export function CreateEventModal({
         />
       )}
 
-      <View style={styles.fieldRow}>
+      <Pressable
+        style={styles.allDayRow}
+        onPress={() => setIsAllDay((v) => !v)}
+        accessibilityRole="switch"
+        accessibilityState={{ checked: isAllDay }}
+        accessibilityLabel="Toute la journée"
+      >
+        <Text style={styles.sectionLabel}>Toute la journée</Text>
+        {isAllDay && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+      </Pressable>
+
+      {!isAllDay && (
+        <View style={styles.fieldRow}>
         <View style={styles.fieldColumn}>
           <Text style={styles.timeLabel}>Début</Text>
           <Pressable
@@ -192,7 +221,8 @@ export function CreateEventModal({
             </Text>
           </Pressable>
         </View>
-      </View>
+        </View>
+      )}
     </View>
   );
 
@@ -404,6 +434,14 @@ const styles = StyleSheet.create({
   dateToggleValueRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dateToggleValue: { fontSize: 14, color: colors.text },
   dateToggleChevron: { fontSize: 10, color: colors.textMuted },
+  allDayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 44,
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
   categorySection: { marginBottom: 16 },
   categoryChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   categoryChip: {
