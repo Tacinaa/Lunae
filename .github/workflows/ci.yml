@@ -37,6 +37,60 @@ jobs:
       - name: Typecheck + build
         run: npm run build
 
+  deploy:
+    name: Backend — déploiement Railway
+    needs: backend
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Le job reste inactif tant que le secret RAILWAY_TOKEN n'est pas configuré dans les
+      # paramètres du repo GitHub (Settings > Secrets and variables > Actions) — évite un
+      # échec de CI tant que le service Railway n'est pas activé (cf. DEPLOIEMENT.md).
+      - name: Vérifier que le déploiement est configuré
+        id: check
+        run: |
+          if [ -z "${{ secrets.RAILWAY_TOKEN }}" ]; then
+            echo "Secret RAILWAY_TOKEN absent — déploiement ignoré."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.check.outputs.skip == 'false'
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: apps/backend/package-lock.json
+
+      - name: Installer les dépendances
+        if: steps.check.outputs.skip == 'false'
+        run: npm ci
+
+      - name: Installer Railway CLI
+        if: steps.check.outputs.skip == 'false'
+        run: npm install -g @railway/cli
+
+      - name: Appliquer les migrations Prisma
+        if: steps.check.outputs.skip == 'false'
+        run: railway run --service backend -- npx prisma migrate deploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Déployer sur Railway
+        if: steps.check.outputs.skip == 'false'
+        run: railway up --service backend --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
   frontend:
     name: Frontend — lint, test, typecheck
     runs-on: ubuntu-latest

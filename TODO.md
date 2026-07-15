@@ -272,8 +272,14 @@
   (SMTP non configuré + `NODE_ENV=production` → `MailService` refuse le fallback console, comportement
   voulu, pas un bug).
 - [x] Créer `docker-compose.yml` pour développement local (PostgreSQL ; backend pas encore containerisé)
-- [ ] Configurer les variables d'environnement Railway/Render (secrets)
-- [ ] Déployer le backend sur Railway ou Render
+- [ ] Configurer les variables d'environnement sur Railway (secrets) — plateforme choisie le
+  2026-07-15 (CLI scriptable, PostgreSQL managé en une commande, build direct depuis le Dockerfile
+  existant sans configuration via dashboard — contrairement à Render, plus orienté UI web). Pas
+  encore fait : nécessite un compte Railway (voir `DEPLOIEMENT.md` pour le manuel complet et la
+  justification du calendrier — activation prévue à l'approche du Bloc 3, pas maintenant, pour
+  éviter un coût récurrent inutile pendant la rédaction du dossier)
+- [ ] Déployer le backend sur Railway — `apps/backend/railway.json` posé (build via Dockerfile),
+  pas encore exécuté (cf. ligne précédente)
 
 ### CI/CD (GitHub Actions)
 - [x] Créer `.github/workflows/ci.yml` (mis en place dès v0.1 plutôt qu'à la fin, pour attraper les régressions au fil de l'eau) :
@@ -287,7 +293,11 @@
     (faux positif sur le pattern standard `setIsLoading(true)` en tête d'effet de fetch, utilisé
     partout dans l'app) et `import/no-named-as-default-member` (faux positif connu avec l'export
     CJS/ESM d'axios sur `axios.create()`/`axios.isAxiosError()`, déjà l'usage documenté correct).
-  - [ ] Job `deploy` (dépend de `test`) : build image Docker → push registry → déploiement Railway
+  - [x] Job `deploy` (dépend de `backend`) : posé le 2026-07-15, déclenché sur push `master`
+    uniquement, applique les migrations Prisma puis déploie via `railway run`/`railway up`
+    (`@railway/cli`, pas de push registry séparé — Railway build directement l'image depuis le repo).
+    Volontairement gardé inactif (étapes réelles sautées, log explicite, pas d'échec CI) tant que le
+    secret `RAILWAY_TOKEN` n'est pas configuré — cf. `DEPLOIEMENT.md` pour le protocole d'activation
 
 ### Qualité et tests
 - [x] Supprimer le boilerplate e2e généré par défaut par `nest new` (`test/app.e2e-spec.ts`, `test/jest-e2e.json`, script `test:e2e`, dépendance `supertest`) — aucun test e2e n'est prévu sur ce projet
