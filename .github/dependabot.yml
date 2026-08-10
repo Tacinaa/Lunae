@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # Backend NestJS
+  - package-ecosystem: "npm"
+    directory: "/apps/backend"
+    schedule:
+      interval: "weekly"
+    groups:
+      nestjs:
+        patterns:
+          - "@nestjs/*"
+    open-pull-requests-limit: 10
+
+  # Frontend Expo
+  - package-ecosystem: "npm"
+    directory: "/apps/frontend"
+    schedule:
+      interval: "weekly"
+    groups:
+      expo:
+        patterns:
+          - "expo"
+          - "expo-*"
+          - "@expo/*"
+    open-pull-requests-limit: 10
