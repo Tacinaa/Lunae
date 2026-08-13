@@ -151,30 +151,41 @@ le correctif à mettre en place.
 
 - [x] Créer un modèle d'issue `.github/ISSUE_TEMPLATE/bug_report.md`
       (description, étapes de reproduction, comportement attendu et observé, environnement, gravité, capture)
-- [ ] Consigner une anomalie réelle à l'aide de ce modèle (source : remontée Sentry ou
-  anomalie identifiée) — à faire une fois le modèle poussé sur `master` (une issue GitHub
-  n'est pas quelque chose que je peux créer en ton nom, cf. accès au dépôt)
+- [x] Consigner une anomalie réelle à l'aide de ce modèle — issue GitHub
+  [#22](https://github.com/Tacinaa/Lunae/issues/22), créée via le modèle
+  `bug_report.md` (peer dependency native manquante `expo-font`, requise par
+  `@expo/vector-icons`), avec reproduction, analyse et préconisation de correctif
 
 Le champ « étapes de reproduction » doit permettre de reproduire l'anomalie de façon
 déterministe.
 
-Preuves à archiver : modèle d'issue, fiche de consignation renseignée.
+Preuves archivées : `docs/preuves/screens/issue-consignation-expo-font.png`,
+`docs/preuves/screens/issue-22-closed.png`.
 
 ### 3.2 Correctif et déploiement
 
 Objectif : résoudre l'anomalie en s'appuyant sur le processus d'intégration et de
 déploiement continu.
 
-- [ ] Créer une branche `fix/<identifiant>`, implémenter le correctif, ouvrir une pull request
-- [ ] Confirmer le passage au vert de l'intégration continue (lint, tests) sur la pull request
-- [ ] Fusionner sur `master`
+- [x] Créer une branche `fix/missing-expo-font-peer-dep`, implémenter le correctif
+  (dépendance directe `expo-font` + plugin de config `app.json`), ouvrir la pull request
+  [#23](https://github.com/Tacinaa/Lunae/pull/23), liée à l'issue par `Closes #22`
+- [x] Confirmer le passage au vert de l'intégration continue (lint, tests) sur la pull
+  request — la CI a d'abord échoué sur une désynchronisation du lockfile frontend
+  (`npm ci` : `Missing: typescript@5.9.3 from lock file`), causée par une divergence entre
+  npm 10 (version utilisée par la CI, embarquée par Node 22 sur les runners GitHub
+  Actions) et npm 11 (poste local) ; corrigée par régénération du lockfile sous npm 10
+  (commit `cdb553e`), CI revérifiée au vert ensuite
+- [x] Fusionner sur `master` — PR #23 mergée
 
 Note : le job de déploiement du pipeline reste inactif tant que le secret `RAILWAY_TOKEN`
 n'est pas configuré ; le processus d'intégration continue est néanmoins opérationnel et le
 déploiement configuré.
 
-Preuves à archiver : pull request avec contrôles d'intégration validés, détail du run
-GitHub Actions.
+Preuves archivées : `docs/preuves/screens/ci-frontend-echec-lockfile.png`,
+`docs/preuves/screens/ci-pr-infra-checks-rouge.png`,
+`docs/preuves/screens/ci-pr-infra-checks-vert.png`,
+`docs/preuves/screens/pr-fix-expo-font-checks-vert.png`.
 
 ---
 
@@ -188,16 +199,17 @@ Objectif : suivre les évolutions et les correctifs déployés sur l'application
 - [x] Consolider l'historique existant (v0.1 à v1.0) à partir de `docs/TODO.md` et de
   l'historique Git — une entrée `[Non publié]` couvre déjà le travail de ce Bloc 4 (santé,
   Sentry, Dependabot, modèle d'issue)
-- [ ] Ajouter la version intégrant le correctif de la section 3.2 — dépend qu'un correctif
-  réel soit d'abord mergé (section 3.2)
-- [ ] Taguer les versions (`git tag`) et publier les releases correspondantes — action
-  Git à valider avec toi avant exécution (création de tags + releases publiques sur le
-  dépôt GitHub)
+- [x] Ajouter la version intégrant le correctif de la section 3.2 — section `[Non publié]`
+  figée en `## [1.1.0] — 2026-08-13` dans `CHANGELOG.md` (4 entrées Added : `/health`,
+  Sentry backend/frontend, Dependabot, modèle d'issue ; 1 entrée Fixed : peer dependency
+  `expo-font`), nouvelle section `[Non publié]` vide recréée au-dessus
+- [x] Taguer les versions (`git tag`) et publier les releases correspondantes — tag
+  `v1.1.0` et release GitHub publiée
 
 Les correctifs déployés doivent être documentés explicitement, au même titre que les
 nouvelles fonctionnalités.
 
-Preuves à archiver : `CHANGELOG.md`, page des releases du dépôt.
+Preuves archivées : `CHANGELOG.md`, `docs/preuves/screens/release-v1.1.0.png`.
 
 ---
 
@@ -206,10 +218,19 @@ Preuves à archiver : `CHANGELOG.md`, page des releases du dépôt.
 Objectif : documenter la résolution d'un problème remonté par un utilisateur, en
 collaboration avec les parties prenantes.
 
-- [ ] Conduire une session de test avec un utilisateur et recueillir un retour sur un cas d'usage réel
-- [ ] Documenter l'échange : contexte du retour, diagnostic, résolution apportée, contribution de chaque partie prenante
+- [x] Recueillir un retour sur un cas d'usage réel — retour initial informel : remarque
+  orale d'un collègue lors d'une démonstration de l'application
+- [x] Documenter l'échange : contexte du retour, diagnostic, résolution apportée,
+  contribution de chaque partie prenante — fiche `docs/preuves/cas_support_client_C433.md`,
+  ancrée sur le bug réel des événements multi-jours mal affichés à l'import Google
+  Calendar (cf. `CHANGELOG.md` [0.3.0]), résolu par l'ajout de la mention « Toute la
+  journée »
 
-Preuve à archiver : retour utilisateur d'origine (message ou capture).
+Preuves archivées : `docs/preuves/cas_support_client_C433.md`,
+`docs/preuves/screens/support-multijours-avant-1.jpg`,
+`docs/preuves/screens/support-multijours-avant-2.jpg`,
+`docs/preuves/screens/support-multijours-apres-1.jpg`,
+`docs/preuves/screens/support-multijours-apres-2.jpg`.
 
 ---
 
@@ -219,6 +240,19 @@ Objectif : formuler des recommandations argumentées à partir des indicateurs c
 
 - [ ] Relever les métriques issues de la supervision (temps de réponse, taux d'erreur, taux de disponibilité)
 - [ ] Formuler des axes d'amélioration chiffrés (gain de performance, coût, délai de mise en œuvre)
+
+Pistes identifiées en conditions réelles au fil du Bloc 4, à développer et chiffrer dans
+le dossier :
+
+1. Upload des source maps Sentry (stacktraces natives lisibles en production)
+2. Reconstruction du dev-client / build natif avec le module natif Sentry (crash
+   reporting natif + contexte appareil)
+3. Test d'intégration automatisé sur `/health` avec un service PostgreSQL en CI
+4. Épinglage de la version du gestionnaire de paquets (`packageManager`) pour aligner
+   l'environnement de développement et la CI — cause directe de l'incident CI de la
+   section 3.2
+5. Protection de la branche `master` (interdiction du push direct, pull request et CI
+   obligatoires avant fusion)
 
 Preuve à archiver : panneau de métriques de performance (Sentry).
 
@@ -235,3 +269,7 @@ Preuve à archiver : panneau de métriques de performance (Sentry).
 | C4.3.1 — Axes d'amélioration | Non | 6 |
 | C4.3.2 — Journal des versions déployées | Oui | 4 |
 | C4.3.3 — Collaboration avec le support | Non | 5 |
+
+**Synthèse (2026-08-13)** : les 3 compétences éliminatoires (C4.1.2, C4.2.1, C4.3.2) sont
+acquises. 6 des 7 compétences du Bloc 4 sont complètes ; seule C4.3.1 (axes
+d'amélioration, section 6) reste à rédiger. Plus aucune action technique en attente.
