@@ -8,6 +8,8 @@ projet suit un versionnage à jalons (v0.1 → v1.0) plutôt que SemVer strict p
 
 ## [Non publié]
 
+## [1.1.0] — 2026-08-13
+
 ### Added
 - Sonde de santé applicative `GET /health` (`@nestjs/terminus`) : connectivité PostgreSQL
   (Prisma), tas mémoire, espace disque — exclue du préfixe `api` pour rester à `/health`,
