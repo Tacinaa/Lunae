@@ -19,10 +19,6 @@ projet suit un versionnage à jalons (v0.1 → v1.0) plutôt que SemVer strict p
   frontend)
 - `.github/ISSUE_TEMPLATE/bug_report.md` — modèle de consignation d'anomalie
 
-### Fixed
-- Dépendance native manquante `expo-font` (peer dependency de `@expo/vector-icons`,
-  détectée via `expo-doctor` — risque de crash hors Expo Go)
-
 ## [1.0.0] — 2026-07-16 — MVP complet (CI/CD, déploiement, QA)
 
 ### Added
