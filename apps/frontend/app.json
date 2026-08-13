@@ -6,7 +6,10 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "scheme": ["lunae", "com.lunae.app"],
+    "scheme": [
+      "lunae",
+      "com.lunae.app"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lunae.app"
@@ -36,7 +39,8 @@
           "calendarPermission": "Lunae a besoin d'accéder à votre calendrier pour importer vos événements et vous proposer les meilleurs créneaux selon votre cycle."
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "@sentry/react-native"
     ],
     "extra": {
       "eas": {
